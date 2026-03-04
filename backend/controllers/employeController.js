@@ -3,6 +3,7 @@ const Employe = require('../models/Employe');
 const Departement = require('../models/Departement');
 const Utilisateur = require('../models/Utilisateur');
 const Role = require('../models/Role'); // Ajouter cette ligne
+const bcrypt = require('bcryptjs');
 
 // @desc    Créer un employé
 // @route   POST /api/employes
@@ -24,10 +25,14 @@ exports.createEmploye = async (req, res) => {
             // Trouver le rôle "Employé"
             const role = await Role.findOne({ nomRole: 'Employé' });
             
-            // Créer l'utilisateur avec un mot de passe par défaut
+            // Hash le mot de passe temporaire
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash('temporaire123', salt);
+            
+            // Créer l'utilisateur avec un mot de passe hashé
             const utilisateur = await Utilisateur.create({
                 email,
-                motDePasse: 'temporaire123', // À changer à la première connexion
+                motDePasse: hashedPassword, // Mot de passe hashé
                 role: role._id,
                 employe: employe._id
             });
@@ -203,14 +208,12 @@ exports.deleteEmploye = async (req, res) => {
             });
         }
 
-        // Désactiver l'utilisateur associé
+        // Supprimer l'utilisateur associé
         if (employe.utilisateur) {
-            await Utilisateur.findByIdAndUpdate(employe.utilisateur, {
-                actif: false
-            });
+            await Utilisateur.findByIdAndDelete(employe.utilisateur);
         }
 
-        await employe.remove();
+        await Employe.findByIdAndDelete(req.params.id);
 
         res.status(200).json({
             success: true,

@@ -1,5 +1,5 @@
 // frontend/src/pages/Login.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Container,
     Paper,
@@ -8,6 +8,7 @@ import {
     Typography,
     Box,
     Alert,
+    Snackbar,
     InputAdornment,
     IconButton
 } from '@mui/material';
@@ -23,15 +24,25 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [localError, setLocalError] = useState('');
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
     
     const { login, error: authError } = useAuth();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (localError || authError) {
+            console.log('Error detected:', localError || authError);
+            setSnackbarOpen(true);
+        }
+    }, [localError, authError]);
 
     const handleChange = (e) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
         });
+        // Clear errors on change
+        setLocalError('');
     };
 
     const handleSubmit = async (e) => {
@@ -49,6 +60,7 @@ const Login = () => {
         const result = await login(formData.email, formData.motDePasse);
         
         if (result.success) {
+            setSnackbarOpen(false);
             navigate('/dashboard');
         }
         
@@ -81,12 +93,6 @@ const Login = () => {
                             Connectez-vous à votre espace
                         </Typography>
                     </Box>
-
-                    {(localError || authError) && (
-                        <Alert severity="error" sx={{ mb: 2 }}>
-                            {localError || authError}
-                        </Alert>
-                    )}
 
                     <form onSubmit={handleSubmit}>
                         <TextField
@@ -154,6 +160,16 @@ const Login = () => {
                     </form>
                 </Paper>
             </Box>
+            <Snackbar 
+                open={snackbarOpen} 
+                onClose={() => setSnackbarOpen(false)} 
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                autoHideDuration={999999999}
+            >
+                <Alert onClose={() => setSnackbarOpen(false)} severity="error" sx={{ width: '100%' }}>
+                    {localError || authError}
+                </Alert>
+            </Snackbar>
         </Container>
     );
 };

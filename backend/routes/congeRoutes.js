@@ -13,7 +13,7 @@ router.route('/')
     .post(protect, demanderConge)
     .get(protect, getConges);
 
-router.put('/:id/approuver', protect, authorize('Manager', 'Manager RH'), approuverConge);
-router.put('/:id/refuser', protect, authorize('Manager', 'Manager RH'), refuserConge);
+router.put('/:id/approuver', protect, authorize('Admin', 'Manager', 'Manager RH'), approuverConge);
+router.put('/:id/refuser', protect, authorize('Admin', 'Manager', 'Manager RH'), refuserConge);
 
 module.exports = router;

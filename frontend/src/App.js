@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Employes from './pages/Employes';
 import Conges from './pages/Conges';
 import Departements from './pages/Departements';
+import Presence from './pages/Presence';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -97,6 +98,14 @@ function AppContent() {
     element={
         <ProtectedRoute>
             <Departements />
+        </ProtectedRoute>
+    }
+/>
+<Route
+    path="/presences"
+    element={
+        <ProtectedRoute>
+            <Presence />
         </ProtectedRoute>
     }
 />

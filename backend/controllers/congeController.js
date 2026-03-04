@@ -20,24 +20,47 @@ exports.demanderConge = async (req, res) => {
             });
         }
 
-        // Vérifier les congés existants pour la période
-        const congesExistants = await Conge.find({
-            employe: congeData.employe,
-            statut: { $in: ['En attente', 'Approuvé'] },
-            $or: [
-                {
-                    dateDebut: { $lte: congeData.dateFin },
-                    dateFin: { $gte: congeData.dateDebut }
-                }
-            ]
-        });
+        // Parser les dates
+        congeData.dateDebut = new Date(congeData.dateDebut);
+        congeData.dateFin = new Date(congeData.dateFin);
 
-        if (congesExistants.length > 0) {
+        if (isNaN(congeData.dateDebut.getTime()) || isNaN(congeData.dateFin.getTime())) {
             return res.status(400).json({
                 success: false,
-                message: 'Une demande de congé existe déjà pour cette période'
+                message: 'Dates invalides'
             });
         }
+
+        // Vérifier que dateFin >= dateDebut
+        if (congeData.dateFin < congeData.dateDebut) {
+            return res.status(400).json({
+                success: false,
+                message: 'La date de fin doit être postérieure à la date de début'
+            });
+        }
+
+        // Calculer le nombre de jours
+        const diffTime = Math.abs(congeData.dateFin - congeData.dateDebut);
+        congeData.joursDemandes = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        // Vérifier les congés existants pour la période
+        // const congesExistants = await Conge.find({
+        //     employe: congeData.employe,
+        //     statut: { $in: ['En attente', 'Approuvé'] },
+        //     $or: [
+        //         {
+        //             dateDebut: { $lte: congeData.dateFin },
+        //             dateFin: { $gte: congeData.dateDebut }
+        //         }
+        //     ]
+        // });
+
+        // if (congesExistants.length > 0) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'Une demande de congé existe déjà pour cette période'
+        //     });
+        // }
 
         const conge = await Conge.create(congeData);
 
@@ -141,4 +164,5 @@ exports.getConges = async (req, res) => {
             message: error.message
         });
     }
+    
 };

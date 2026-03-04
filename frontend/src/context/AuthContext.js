@@ -28,8 +28,8 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (email, motDePasse) => {
+        setError(null); // Clear error state at the start of each login attempt
         try {
-            setError(null);
             const response = await authService.login(email, motDePasse);
             const { token, utilisateur } = response.data;
             

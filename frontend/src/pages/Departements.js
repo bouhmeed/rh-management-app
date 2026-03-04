@@ -113,11 +113,17 @@ const Departements = () => {
                 return;
             }
 
+            // Prepare data, exclude empty responsable
+            const submitData = { ...formData };
+            if (!submitData.responsable) {
+                delete submitData.responsable;
+            }
+
             if (selectedDept) {
-                await departementService.update(selectedDept._id, formData);
+                await departementService.update(selectedDept._id, submitData);
                 toast.success('Département modifié avec succès');
             } else {
-                await departementService.create(formData);
+                await departementService.create(submitData);
                 toast.success('Département créé avec succès');
             }
             
@@ -382,7 +388,7 @@ const Departements = () => {
                             ))
                         ) : (
                             <ListItem>
-                                <ListItemText 
+                                <ListItemText
                                     primary="Aucun employé dans ce département"
                                     secondary="Ajoutez des employés via la page Employés"
                                 />

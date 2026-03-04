@@ -116,8 +116,8 @@ const Conges = () => {
     const handleSubmit = async () => {
         try {
             // Validation
-            if (!formData.dateDebut || !formData.dateFin || !formData.motif) {
-                toast.warning('Veuillez remplir tous les champs');
+            if (!formData.employe || !formData.dateDebut || !formData.dateFin || !formData.motif) {
+                toast.warning('Veuillez remplir tous les champs obligatoires');
                 return;
             }
 

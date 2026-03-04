@@ -60,6 +60,7 @@ const Layout = ({ children }) => {
     const menuItems = [
         { text: 'Tableau de bord', icon: <Dashboard />, path: '/dashboard' },
         { text: 'Employés', icon: <People />, path: '/employes' },
+        { text: 'Départements', icon: <Business />, path: '/departements' },
         { text: 'Congés', icon: <EventNote />, path: '/conges' },
         { text: 'Présences', icon: <EventNote />, path: '/presences' },
         { text: 'Contrats', icon: <Business />, path: '/contrats' },

@@ -1,6 +1,12 @@
 // backend/models/Presence.js
 const mongoose = require('mongoose');
 
+const pauseSchema = new mongoose.Schema({
+    start: { type: Date, required: true },
+    end: { type: Date },
+    duration: { type: Number, default: 0 } // in minutes
+});
+
 const presenceSchema = new mongoose.Schema({
     employe: {
         type: mongoose.Schema.Types.ObjectId,
@@ -12,24 +18,17 @@ const presenceSchema = new mongoose.Schema({
         required: true,
         default: Date.now
     },
-    heureEntree: {
+    sessionStatus: {
         type: String,
-        required: true,
-        match: [/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Format heure invalide (HH:MM)']
+        enum: ['not_started', 'active', 'paused', 'ended'],
+        default: 'not_started'
     },
-    heureSortie: {
-        type: String,
-        match: [/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Format heure invalide (HH:MM)']
-    },
-    statut: {
-        type: String,
-        enum: ['Présent', 'Absent', 'Retard', 'Départ anticipé', 'Congé'],
-        default: 'Présent'
-    },
-    heuresTravaillees: {
-        type: Number,
-        default: 0
-    },
+    startTime: Date,
+    pauses: [pauseSchema],
+    endTime: Date,
+    totalPauseTime: { type: Number, default: 0 }, // in minutes
+    actualWorkHours: { type: Number, default: 0 }, // in hours
+    anomalies: [String],
     note: String
 }, {
     timestamps: true
@@ -39,29 +38,87 @@ const presenceSchema = new mongoose.Schema({
 presenceSchema.index({ employe: 1, date: 1 }, { unique: true });
 
 // Méthodes
-presenceSchema.methods.enregistrerEntree = function() {
+presenceSchema.methods.startWork = function() {
     const now = new Date();
-    this.heureEntree = now.toTimeString().split(' ')[0].substring(0, 5);
-    this.date = now;
-    return this.save();
+    if (this.sessionStatus === 'not_started') {
+        this.startTime = now;
+        this.sessionStatus = 'active';
+        this.date = now;
+        return this.save();
+    }
+    throw new Error('Session already started');
 };
 
-presenceSchema.methods.enregistrerSortie = function() {
-    const now = new Date();
-    this.heureSortie = now.toTimeString().split(' ')[0].substring(0, 5);
+presenceSchema.methods.pauseWork = function() {
+    if (this.sessionStatus === 'active') {
+        this.pauses.push({ start: new Date() });
+        this.sessionStatus = 'paused';
+        return this.save();
+    }
+    throw new Error('Cannot pause: session not active');
+};
+
+presenceSchema.methods.resumeWork = function() {
+    if (this.sessionStatus === 'paused') {
+        const lastPause = this.pauses[this.pauses.length - 1];
+        if (lastPause && !lastPause.end) {
+            lastPause.end = new Date();
+            lastPause.duration = (lastPause.end - lastPause.start) / (1000 * 60); // minutes
+            this.totalPauseTime += lastPause.duration;
+            this.sessionStatus = 'active';
+            return this.save();
+        }
+    }
+    throw new Error('Cannot resume: no active pause');
+};
+
+presenceSchema.methods.endWork = function() {
+    if (this.sessionStatus === 'active' || this.sessionStatus === 'paused') {
+        // End any ongoing pause
+        if (this.sessionStatus === 'paused') {
+            this.resumeWork();
+        }
+        this.endTime = new Date();
+        this.sessionStatus = 'ended';
+        
+        // Calculate actual work hours
+        const totalTime = (this.endTime - this.startTime) / (1000 * 60 * 60); // hours
+        this.actualWorkHours = Math.max(0, totalTime - (this.totalPauseTime / 60));
+        
+        // Detect anomalies
+        this.detectAnomalies();
+        
+        return this.save();
+    }
+    throw new Error('Cannot end: session not active');
+};
+
+presenceSchema.methods.detectAnomalies = function() {
+    this.anomalies = [];
     
-    // Calculer les heures travaillées
-    if (this.heureEntree && this.heureSortie) {
-        const [h1, m1] = this.heureEntree.split(':').map(Number);
-        const [h2, m2] = this.heureSortie.split(':').map(Number);
-        
-        const minutes1 = h1 * 60 + m1;
-        const minutes2 = h2 * 60 + m2;
-        
-        this.heuresTravaillees = Number(((minutes2 - minutes1) / 60).toFixed(2));
+    if (this.startTime) {
+        const startHour = this.startTime.getHours();
+        if (startHour > 9) { // Assuming 9 AM start
+            this.anomalies.push('Arrivée tardive');
+        }
     }
     
-    return this.save();
+    if (this.endTime) {
+        const endHour = this.endTime.getHours();
+        if (endHour < 17) { // Assuming 5 PM end
+            this.anomalies.push('Départ anticipé');
+        }
+    }
+    
+    if (this.actualWorkHours < 7) { // Assuming 8 hours - 1 hour break
+        this.anomalies.push('Heures insuffisantes');
+    } else if (this.actualWorkHours > 9) {
+        this.anomalies.push('Heures supplémentaires');
+    }
+    
+    if (this.totalPauseTime > 120) { // More than 2 hours pause
+        this.anomalies.push('Pauses excessives');
+    }
 };
 
 module.exports = mongoose.model('Presence', presenceSchema);

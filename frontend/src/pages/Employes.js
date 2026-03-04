@@ -36,9 +36,10 @@ import {
     Visibility,
     FilterList,
     Refresh,
-    PersonAdd
+    PersonAdd,
+    EventNote
 } from '@mui/icons-material';
-import { employeService, departementService } from '../services/api';
+import { employeService, departementService, congeService } from '../services/api';
 import Layout from '../components/Layout';
 import Loader from '../components/Loader';
 import { toast } from 'react-toastify';
@@ -58,7 +59,15 @@ const Employes = () => {
     const [departements, setDepartements] = useState([]);
     const [openDialog, setOpenDialog] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
+    const [openCongeDialog, setOpenCongeDialog] = useState(false);
     const [selectedEmploye, setSelectedEmploye] = useState(null);
+    const [congeFormData, setCongeFormData] = useState({
+        type: 'Annuel',
+        dateDebut: '',
+        dateFin: '',
+        motif: ''
+    });
     const [formData, setFormData] = useState({
         nom: '',
         prenom: '',
@@ -146,7 +155,7 @@ const Employes = () => {
             setFormData({
                 nom: employe.nom || '',
                 prenom: employe.prenom || '',
-                email: employe.email || '',
+                email: employe.utilisateur?.email || '',
                 telephone: employe.telephone || '',
                 poste: employe.poste || '',
                 departement: employe.departement?._id || '',
@@ -218,7 +227,7 @@ const Employes = () => {
     const handleSubmit = async () => {
         try {
             // Validation simple
-            if (!formData.nom || !formData.prenom || !formData.poste || !formData.salaire) {
+            if (!formData.nom || !formData.prenom || !formData.poste || !formData.salaire || !formData.departement) {
                 toast.warning('Veuillez remplir tous les champs obligatoires');
                 return;
             }
@@ -251,6 +260,49 @@ const Employes = () => {
             chargerEmployes();
         } catch (error) {
             toast.error('Erreur lors de la suppression');
+        }
+    };
+
+    const handleViewDetails = (employe) => {
+        setSelectedEmploye(employe);
+        setOpenDetailsDialog(true);
+    };
+
+    const handleOpenCongeDialog = (employe) => {
+        setSelectedEmploye(employe);
+        setCongeFormData({
+            type: 'Annuel',
+            dateDebut: '',
+            dateFin: '',
+            motif: ''
+        });
+        setOpenCongeDialog(true);
+    };
+
+    const handleCongeInputChange = (e) => {
+        setCongeFormData({
+            ...congeFormData,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleSubmitConge = async () => {
+        try {
+            if (!congeFormData.dateDebut || !congeFormData.dateFin) {
+                toast.warning('Veuillez sélectionner les dates de congé');
+                return;
+            }
+
+            const congeData = {
+                ...congeFormData,
+                employe: selectedEmploye._id
+            };
+
+            await congeService.create(congeData);
+            toast.success('Demande de congé créée avec succès');
+            setOpenCongeDialog(false);
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Erreur lors de la création du congé');
         }
     };
 
@@ -404,11 +456,16 @@ const Employes = () => {
                                     <TableCell>{employe.departement?.nomDepartement || '-'}</TableCell>
                                     <TableCell>{getStatutChip(employe.statut)}</TableCell>
                                     <TableCell>
-                                        {new Date(employe.dateEmbauche).toLocaleDateString()}
+                                        {employe.dateEmbauche ? new Date(employe.dateEmbauche).toLocaleDateString() : '-'}
                                     </TableCell>
                                     <TableCell align="right">
+                                        <Tooltip title="Ajouter congé">
+                                            <IconButton size="small" color="secondary" onClick={() => handleOpenCongeDialog(employe)}>
+                                                <EventNote />
+                                            </IconButton>
+                                        </Tooltip>
                                         <Tooltip title="Voir détails">
-                                            <IconButton size="small" color="info">
+                                            <IconButton size="small" color="info" onClick={() => handleViewDetails(employe)}>
                                                 <Visibility />
                                             </IconButton>
                                         </Tooltip>
@@ -706,6 +763,113 @@ const Employes = () => {
                     <Button onClick={handleDeleteConfirm} color="error" variant="contained">
                         Supprimer
                     </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Dialog de congé */}
+            <Dialog open={openCongeDialog} onClose={() => setOpenCongeDialog(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>
+                    Demande de congé pour {selectedEmploye?.prenom} {selectedEmploye?.nom}
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                        <Grid item xs={12}>
+                            <FormControl fullWidth>
+                                <InputLabel>Type de congé</InputLabel>
+                                <Select
+                                    name="type"
+                                    value={congeFormData.type}
+                                    onChange={handleCongeInputChange}
+                                    label="Type de congé"
+                                >
+                                    <MenuItem value="Annuel">Congé annuel</MenuItem>
+                                    <MenuItem value="Maladie">Congé maladie</MenuItem>
+                                    <MenuItem value="Exceptionnel">Congé exceptionnel</MenuItem>
+                                    <MenuItem value="Maternité">Congé maternité</MenuItem>
+                                    <MenuItem value="Paternité">Congé paternité</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label="Date de début *"
+                                name="dateDebut"
+                                type="date"
+                                value={congeFormData.dateDebut}
+                                onChange={handleCongeInputChange}
+                                InputLabelProps={{ shrink: true }}
+                                required
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label="Date de fin *"
+                                name="dateFin"
+                                type="date"
+                                value={congeFormData.dateFin}
+                                onChange={handleCongeInputChange}
+                                InputLabelProps={{ shrink: true }}
+                                required
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="Motif (optionnel)"
+                                name="motif"
+                                multiline
+                                rows={3}
+                                value={congeFormData.motif}
+                                onChange={handleCongeInputChange}
+                                placeholder="Raison de la demande de congé..."
+                            />
+                        </Grid>
+                    </Grid>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenCongeDialog(false)}>Annuler</Button>
+                    <Button onClick={handleSubmitConge} variant="contained">
+                        Demander congé
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Dialog de détails */}
+            <Dialog open={openDetailsDialog} onClose={() => setOpenDetailsDialog(false)} maxWidth="md" fullWidth>
+                <DialogTitle>Détails de l'employé</DialogTitle>
+                <DialogContent dividers>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} md={6}>
+                            <Typography variant="h6" gutterBottom>Informations personnelles</Typography>
+                            <Typography><strong>Nom:</strong> {selectedEmploye?.nom}</Typography>
+                            <Typography><strong>Prénom:</strong> {selectedEmploye?.prenom}</Typography>
+                            <Typography><strong>Email:</strong> {selectedEmploye?.utilisateur?.email || '-'}</Typography>
+                            <Typography><strong>Téléphone:</strong> {selectedEmploye?.telephone || '-'}</Typography>
+                            <Typography><strong>Matricule:</strong> {selectedEmploye?.matricule}</Typography>
+                            <Typography><strong>Date de naissance:</strong> {selectedEmploye?.dateNaissance ? new Date(selectedEmploye.dateNaissance).toLocaleDateString() : '-'}</Typography>
+                            <Typography><strong>Genre:</strong> {selectedEmploye?.genre === 'M' ? 'Masculin' : selectedEmploye?.genre === 'F' ? 'Féminin' : selectedEmploye?.genre || '-'}</Typography>
+                            <Typography><strong>Situation familiale:</strong> {selectedEmploye?.situationFamiliale || '-'}</Typography>
+                            <Typography><strong>Nombre d'enfants:</strong> {selectedEmploye?.enfants || 0}</Typography>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <Typography variant="h6" gutterBottom>Informations professionnelles</Typography>
+                            <Typography><strong>Poste:</strong> {selectedEmploye?.poste}</Typography>
+                            <Typography><strong>Département:</strong> {selectedEmploye?.departement?.nomDepartement || '-'}</Typography>
+                            <Typography><strong>Salaire:</strong> {selectedEmploye?.salaire ? `${selectedEmploye.salaire} DT` : '-'}</Typography>
+                            <Typography><strong>Date d'embauche:</strong> {selectedEmploye?.dateEmbauche ? new Date(selectedEmploye.dateEmbauche).toLocaleDateString() : '-'}</Typography>
+                            <Typography><strong>Statut:</strong> {selectedEmploye?.statut}</Typography>
+                            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Adresse</Typography>
+                            <Typography><strong>Rue:</strong> {selectedEmploye?.adresse?.rue || '-'}</Typography>
+                            <Typography><strong>Ville:</strong> {selectedEmploye?.adresse?.ville || '-'}</Typography>
+                            <Typography><strong>Code postal:</strong> {selectedEmploye?.adresse?.codePostal || '-'}</Typography>
+                            <Typography><strong>Pays:</strong> {selectedEmploye?.adresse?.pays || '-'}</Typography>
+                        </Grid>
+                    </Grid>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenDetailsDialog(false)}>Fermer</Button>
                 </DialogActions>
             </Dialog>
         </Layout>

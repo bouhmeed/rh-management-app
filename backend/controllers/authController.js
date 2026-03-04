@@ -2,6 +2,8 @@
 const Utilisateur = require('../models/Utilisateur');
 const Role = require('../models/Role'); // Cette ligne était manquante
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const Presence = require('../models/Presence');
 
 // Générer un token JWT
 const genererToken = (id) => {
@@ -32,10 +34,14 @@ exports.register = async (req, res) => {
             roleDoc = await Role.findOne({ nomRole: 'Employé' });
         }
 
+        // Hash le mot de passe
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(motDePasse, salt);
+
         // Créer l'utilisateur
         const utilisateur = await Utilisateur.create({
             email,
-            motDePasse,
+            motDePasse: hashedPassword,
             role: roleDoc._id
         });
 
@@ -80,7 +86,7 @@ exports.login = async (req, res) => {
         if (!utilisateur) {
             return res.status(401).json({
                 success: false,
-                message: 'Email ou mot de passe incorrect'
+                message: 'Cet email n\'existe pas'
             });
         }
 
@@ -98,7 +104,7 @@ exports.login = async (req, res) => {
         if (!estValide) {
             return res.status(401).json({
                 success: false,
-                message: 'Email ou mot de passe incorrect'
+                message: 'Mot de passe incorrect'
             });
         }
 
@@ -157,6 +163,37 @@ exports.getMe = async (req, res) => {
         res.status(200).json({
             success: true,
             data: utilisateur
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// @desc    Supprimer un utilisateur (Admin seulement)
+// @route   DELETE /api/auth/users/:email
+// @access  Private (Admin)
+exports.deleteUser = async (req, res) => {
+    try {
+        const email = req.params.email;
+
+        // Trouver l'utilisateur
+        const utilisateur = await Utilisateur.findOne({ email });
+        if (!utilisateur) {
+            return res.status(404).json({
+                success: false,
+                message: 'Utilisateur non trouvé'
+            });
+        }
+
+        // Supprimer l'utilisateur
+        await Utilisateur.findByIdAndDelete(utilisateur._id);
+
+        res.status(200).json({
+            success: true,
+            message: 'Utilisateur supprimé avec succès'
         });
     } catch (error) {
         res.status(500).json({

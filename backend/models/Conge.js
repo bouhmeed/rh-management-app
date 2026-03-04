@@ -43,19 +43,6 @@ const congeSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Validation: dateFin >= dateDebut
-congeSchema.pre('save', function(next) {
-    if (this.dateFin < this.dateDebut) {
-        return next(new Error('La date de fin doit être postérieure à la date de début'));
-    }
-    
-    // Calculer le nombre de jours
-    const diffTime = Math.abs(this.dateFin - this.dateDebut);
-    this.joursDemandes = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    
-    next();
-});
-
 // Méthodes
 congeSchema.methods.approuver = async function(utilisateurId) {
     this.statut = 'Approuvé';

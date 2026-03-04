@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const employeRoutes = require('./routes/employeRoutes');
 const congeRoutes = require('./routes/congeRoutes');
 const departementRoutes = require('./routes/departementRoutes');
+const presenceRoutes = require('./routes/presenceRoutes');
 
 const app = express();
 
@@ -99,6 +100,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/employes', employeRoutes);
 app.use('/api/conges', congeRoutes);
 app.use('/api/departements', departementRoutes);
+app.use('/api/presences', presenceRoutes);
 
 // Route de test
 app.get('/', (req, res) => {
@@ -109,7 +111,8 @@ app.get('/', (req, res) => {
             auth: '/api/auth',
             employes: '/api/employes',
             conges: '/api/conges',
-            departements: '/api/departements'
+            departements: '/api/departements',
+            presences: '/api/presences'
         }
     });
 });

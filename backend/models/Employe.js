@@ -39,7 +39,8 @@ const employeSchema = new mongoose.Schema({
     },
     departement: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Departement'
+        ref: 'Departement',
+        required: [true, 'Le département est requis']
     },
     poste: {
         type: String,

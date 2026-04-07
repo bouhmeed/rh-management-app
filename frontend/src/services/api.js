@@ -57,6 +57,7 @@ export const employeService = {
 // Services des congés
 export const congeService = {
     getAll: (params) => api.get('/conges', { params }),
+    getMyConges: () => api.get('/conges/my-conges'),
     create: (data) => api.post('/conges', data),
     approuver: (id) => api.put(`/conges/${id}/approuver`),
     refuser: (id, raison) => api.put(`/conges/${id}/refuser`, { raison })
@@ -84,7 +85,16 @@ export const presenceService = {
     pauseWork: (employeId) => api.post(`/presences/pause/${employeId}`),
     resumeWork: (employeId) => api.post(`/presences/resume/${employeId}`),
     endWork: (employeId) => api.post(`/presences/end/${employeId}`),
-    getCurrentSession: (employeId) => api.get(`/presences/current/${employeId}`)
+    getCurrentSession: (employeId) => api.get(`/presences/current/${employeId}`),
+    // New analytics endpoints
+    getTodayStats: (employeId) => api.get(`/presences/stats/today/${employeId}`),
+    getWeekStats: (employeId) => api.get(`/presences/stats/week/${employeId}`),
+    getMonthStats: (employeId) => api.get(`/presences/stats/month/${employeId}`),
+    getAdminStats: () => api.get('/presences/stats/admin'),
+    getAnomalies: () => api.get('/presences/anomalies'),
+    getSystemStatus: () => api.get('/presences/system/status'),
+    getAnalytics: (params) => api.get('/presences/analytics', { params }),
+    exportData: (params) => api.get('/presences/export', { params, responseType: 'blob' })
 };
 
 export default api;

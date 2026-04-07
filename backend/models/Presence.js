@@ -18,6 +18,9 @@ const presenceSchema = new mongoose.Schema({
         required: true,
         default: Date.now
     },
+    heureEntree: Date,
+    heureSortie: Date,
+    heuresTravaillees: { type: Number, default: 0 },
     sessionStatus: {
         type: String,
         enum: ['not_started', 'active', 'paused', 'ended'],
@@ -119,6 +122,26 @@ presenceSchema.methods.detectAnomalies = function() {
     if (this.totalPauseTime > 120) { // More than 2 hours pause
         this.anomalies.push('Pauses excessives');
     }
+};
+
+// Legacy methods for backward compatibility
+presenceSchema.methods.enregistrerEntree = function() {
+    const now = new Date();
+    this.heureEntree = now;
+    this.date = now;
+    return this.save();
+};
+
+presenceSchema.methods.enregistrerSortie = function() {
+    const now = new Date();
+    this.heureSortie = now;
+    
+    if (this.heureEntree) {
+        const diffMs = now - this.heureEntree;
+        this.heuresTravaillees = Math.round(diffMs / (1000 * 60 * 60) * 10) / 10; // hours with 1 decimal
+    }
+    
+    return this.save();
 };
 
 module.exports = mongoose.model('Presence', presenceSchema);

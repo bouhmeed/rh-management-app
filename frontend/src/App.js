@@ -12,6 +12,8 @@ import Presence from './pages/Presence';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Profil from './pages/Profil';
+import Layout from './components/Layout';
 
 // Création du thème personnalisé
 const theme = createTheme({
@@ -106,6 +108,46 @@ function AppContent() {
     element={
         <ProtectedRoute>
             <Presence />
+        </ProtectedRoute>
+    }
+/>
+<Route
+    path="/profil"
+    element={
+        <ProtectedRoute>
+            <Profil />
+        </ProtectedRoute>
+    }
+/>
+<Route
+    path="/contrats"
+    element={
+        <ProtectedRoute>
+            <Layout><div>Contrats page - Coming soon</div></Layout>
+        </ProtectedRoute>
+    }
+/>
+<Route
+    path="/paie"
+    element={
+        <ProtectedRoute>
+            <Layout><div>Paie page - Coming soon</div></Layout>
+        </ProtectedRoute>
+    }
+/>
+<Route
+    path="/rapports"
+    element={
+        <ProtectedRoute>
+            <Layout><div>Rapports page - Coming soon</div></Layout>
+        </ProtectedRoute>
+    }
+/>
+<Route
+    path="/parametres"
+    element={
+        <ProtectedRoute>
+            <Layout><div>Paramètres page - Coming soon</div></Layout>
         </ProtectedRoute>
     }
 />

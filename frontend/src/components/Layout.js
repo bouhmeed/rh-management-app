@@ -105,6 +105,22 @@ const Layout = ({ children }) => {
                     </ListItem>
                 ))}
             </List>
+            
+            {/* Footer with user info */}
+            <Box sx={{ mt: 'auto', p: 2 }}>
+                <Divider sx={{ mb: 2 }} />
+                <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Connecté en tant que:
+                    </Typography>
+                    <Typography variant="body1" fontWeight="bold" sx={{ mb: 0.5 }}>
+                        {user?.email}
+                    </Typography>
+                    <Typography variant="body2" color="primary">
+                        {user?.role?.nomRole || 'Employé'}
+                    </Typography>
+                </Box>
+            </Box>
         </Box>
     );
 

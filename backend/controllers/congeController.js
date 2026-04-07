@@ -166,3 +166,31 @@ exports.getConges = async (req, res) => {
     }
     
 };
+
+// @desc    Obtenir les congés de l'utilisateur connecté
+// @route   GET /api/conges/my-conges
+// @access  Private
+exports.getMyConges = async (req, res) => {
+    try {
+        const filter = { employe: req.utilisateur.employe };
+        
+        if (req.query.statut) filter.statut = req.query.statut;
+        if (req.query.type) filter.type = req.query.type;
+
+        const conges = await Conge.find(filter)
+            .populate('employe', 'nom prenom matricule')
+            .populate('approuvePar', 'email')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: conges.length,
+            data: conges
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};

@@ -1,0 +1,123 @@
+// frontend/src/services/api.js
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+const api = axios.create({
+    baseURL: API_URL,
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
+
+// Intercepteur pour ajouter le token
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Intercepteur pour gérer les erreurs
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401 && !error.config.url.includes('/auth/login')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
+// Services d'authentification
+export const authService = {
+    login: (email, motDePasse) => api.post('/auth/login', { email, motDePasse }),
+    register: (userData) => api.post('/auth/register', userData),
+    logout: () => api.post('/auth/logout'),
+    getMe: () => api.get('/auth/me')
+};
+
+// Services des employés
+export const employeService = {
+    getAll: (params) => api.get('/employes', { params }),
+    getOne: (id) => api.get(`/employes/${id}`),
+    create: (data) => api.post('/employes', data),
+    update: (id, data) => api.put(`/employes/${id}`, data),
+    delete: (id) => api.delete(`/employes/${id}`)
+};
+
+// Services des congés
+export const congeService = {
+    getAll: (params) => api.get('/conges', { params }),
+    getMyConges: () => api.get('/conges/my-conges'),
+    create: (data) => api.post('/conges', data),
+    approuver: (id) => api.put(`/conges/${id}/approuver`),
+    refuser: (id, raison) => api.put(`/conges/${id}/refuser`, { raison })
+};
+
+// Services des départements
+export const departementService = {
+    getAll: () => api.get('/departements'),
+    create: (data) => api.post('/departements', data),
+    update: (id, data) => api.put(`/departements/${id}`, data),
+    delete: (id) => api.delete(`/departements/${id}`),
+    addEmploye: (deptId, employeId) => api.post(`/departements/${deptId}/employes/${employeId}`)
+};
+
+// Services des présences
+export const presenceService = {
+    getAll: (params) => api.get('/presences', { params }),
+    getOne: (id) => api.get(`/presences/${id}`),
+    create: (data) => api.post('/presences', data),
+    update: (id, data) => api.put(`/presences/${id}`, data),
+    delete: (id) => api.delete(`/presences/${id}`),
+    enregistrerEntree: (employeId) => api.post(`/presences/entree/${employeId}`),
+    enregistrerSortie: (employeId) => api.post(`/presences/sortie/${employeId}`),
+    startWork: (employeId) => api.post(`/presences/start/${employeId}`),
+    pauseWork: (employeId) => api.post(`/presences/pause/${employeId}`),
+    resumeWork: (employeId) => api.post(`/presences/resume/${employeId}`),
+    endWork: (employeId) => api.post(`/presences/end/${employeId}`),
+    getCurrentSession: (employeId) => api.get(`/presences/current/${employeId}`),
+    // New analytics endpoints
+    getTodayStats: (employeId) => api.get(`/presences/stats/today/${employeId}`),
+    getWeekStats: (employeId) => api.get(`/presences/stats/week/${employeId}`),
+    getMonthStats: (employeId) => api.get(`/presences/stats/month/${employeId}`),
+    getAdminStats: () => api.get('/presences/stats/admin'),
+    getAnomalies: () => api.get('/presences/anomalies'),
+    getSystemStatus: () => api.get('/presences/system/status'),
+    getAnalytics: (params) => api.get('/presences/analytics', { params }),
+    exportData: (params) => api.get('/presences/export', { params, responseType: 'blob' })
+};
+
+// Services des contrats
+export const contratService = {
+    getAll: (params) => api.get('/contrats', { params }),
+    getMyContract: () => api.get('/contrats/my-contract'),
+    getOne: (id) => api.get(`/contrats/${id}`),
+    create: (data) => api.post('/contrats', data),
+    update: (id, data) => api.put(`/contrats/${id}`, data),
+    delete: (id) => api.delete(`/contrats/${id}`),
+    resilier: (id, raison) => api.put(`/contrats/${id}/resilier`, { raison })
+};
+
+// Services des paies
+export const paieService = {
+    getAll: (params) => api.get('/paies', { params }),
+    getMyPaies: (params) => api.get('/paies/my-paies', { params }),
+    getOne: (id) => api.get(`/paies/${id}`),
+    create: (data) => api.post('/paies', data),
+    update: (id, data) => api.put(`/paies/${id}`, data),
+    delete: (id) => api.delete(`/paies/${id}`),
+    valider: (id) => api.put(`/paies/${id}/valider`),
+    payer: (id) => api.put(`/paies/${id}/payer`)
+};
+
+export default api;

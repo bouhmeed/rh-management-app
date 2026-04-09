@@ -12,6 +12,7 @@ const departementRoutes = require('./routes/departementRoutes');
 const presenceRoutes = require('./routes/presenceRoutes');
 const contratRoutes = require('./routes/contratRoutes');
 const paieRoutes = require('./routes/paieRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 
 const app = express();
 
@@ -105,6 +106,7 @@ app.use('/api/departements', departementRoutes);
 app.use('/api/presences', presenceRoutes);
 app.use('/api/contrats', contratRoutes);
 app.use('/api/paies', paieRoutes);
+app.use('/api/tasks', taskRoutes);
 
 // Route de test
 app.get('/', (req, res) => {

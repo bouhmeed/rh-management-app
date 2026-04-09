@@ -133,14 +133,38 @@ const Dashboard = () => {
         }, {})
     ).map(([name, value]) => ({ name, value }));
 
-    const donneesCongesParMois = [
-        { mois: 'Jan', conges: 4 },
-        { mois: 'Fév', conges: 3 },
-        { mois: 'Mar', conges: 7 },
-        { mois: 'Avr', conges: 5 },
-        { mois: 'Mai', conges: 8 },
-        { mois: 'Juin', conges: 6 }
-    ];
+    // Calculate real congé data by month
+    const donneesCongesParMois = (() => {
+        const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+        const today = new Date();
+        const last6Months = [];
+        
+        // Get last 6 months
+        for (let i = 5; i >= 0; i--) {
+            const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            last6Months.push({
+                year: date.getFullYear(),
+                month: date.getMonth(),
+                name: monthNames[date.getMonth()]
+            });
+        }
+        
+        // Group conges by month
+        const congesByMonth = last6Months.map(monthInfo => {
+            const monthConges = conges.filter(conge => {
+                const congeDate = new Date(conge.dateDebut);
+                return congeDate.getFullYear() === monthInfo.year && 
+                       congeDate.getMonth() === monthInfo.month;
+            });
+            
+            return {
+                mois: monthInfo.name,
+                conges: monthConges.length
+            };
+        });
+        
+        return congesByMonth;
+    })();
 
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 

@@ -30,10 +30,6 @@ const paieSchema = new mongoose.Schema({
         heures: Number,
         taux: Number
     },
-    congesPayes: {
-        pris: Number,
-        restants: Number
-    },
     cotisations: {
         cnss: Number,
         impot: Number,
@@ -47,7 +43,26 @@ const paieSchema = new mongoose.Schema({
         default: 'Brouillon'
     },
     datePaiement: Date,
-    bulletinURL: String
+    bulletinURL: String,
+    adjustments: [{
+        type: {
+            type: String,
+            required: true
+        },
+        montant: {
+            type: Number,
+            required: true
+        },
+        description: String,
+        addedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Utilisateur'
+        },
+        addedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }]
 }, {
     timestamps: true
 });
@@ -59,10 +74,15 @@ paieSchema.index({ employe: 1, mois: 1 }, { unique: true });
 paieSchema.methods.calculerSalaire = async function() {
     // Récupérer le contrat actif de l'employé
     const Contrat = mongoose.model('Contrat');
+    const Conge = mongoose.model('Conge');
+    const Employe = mongoose.model('Employe');
+    
     const contrat = await Contrat.findOne({ 
         employe: this.employe, 
         statut: 'Actif' 
     }).sort({ dateDebut: -1 });
+    
+    const employe = await Employe.findById(this.employe);
     
     if (contrat) {
         this.salaireBase = contrat.salaireBase;
@@ -78,6 +98,38 @@ paieSchema.methods.calculerSalaire = async function() {
         // Soustraire les déductions
         if (this.deductions && this.deductions.length > 0) {
             total -= this.deductions.reduce((acc, ded) => acc + ded.montant, 0);
+        }
+        
+        // Calculer les congés pris dynamiquement
+        const leaveData = await Conge.calculateLeaveForPayroll(this.employe, this.mois);
+        this.congesPayes = {
+            pris: leaveData.totalPris,
+            restants: Math.max(0, 25 - leaveData.totalPris) // Assuming 25 days annual leave
+        };
+        
+        // Apply employee template allowances if available
+        if (employe && employe.payrollTemplate) {
+            const template = employe.payrollTemplate;
+            
+            // Transport allowance
+            if (template.transportAllowance && template.transportAllowance.enabled) {
+                total += template.transportAllowance.montant;
+            }
+            
+            // Overtime calculation (simplified - would need presence data)
+            if (template.overtimeRate && template.overtimeRate.enabled && this.heuresSupplementaires) {
+                const overtimeMultiplier = template.overtimeRate.multiplier;
+                const overtimeHours = this.heuresSupplementaires.heures || 0;
+                const hourlyRate = this.salaireBase / 173.33; // Monthly hours average
+                total += overtimeHours * hourlyRate * overtimeMultiplier;
+            }
+        }
+        
+        // Apply adjustments (one-time bonuses/deductions)
+        if (this.adjustments && this.adjustments.length > 0) {
+            this.adjustments.forEach(adj => {
+                total += adj.montant; // Positive for bonus, negative for deduction
+            });
         }
         
         // Calculer les cotisations (exemple simplifié)

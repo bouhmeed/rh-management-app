@@ -51,7 +51,9 @@ export const employeService = {
     getOne: (id) => api.get(`/employes/${id}`),
     create: (data) => api.post('/employes', data),
     update: (id, data) => api.put(`/employes/${id}`, data),
-    delete: (id) => api.delete(`/employes/${id}`)
+    delete: (id) => api.delete(`/employes/${id}`),
+    updatePayrollTemplate: (id, data) => api.put(`/employes/${id}/payroll-template`, data),
+    getPayrollTemplate: (id) => api.get(`/employes/${id}/payroll-template`)
 };
 
 // Services des congés
@@ -79,22 +81,12 @@ export const presenceService = {
     create: (data) => api.post('/presences', data),
     update: (id, data) => api.put(`/presences/${id}`, data),
     delete: (id) => api.delete(`/presences/${id}`),
-    enregistrerEntree: (employeId) => api.post(`/presences/entree/${employeId}`),
-    enregistrerSortie: (employeId) => api.post(`/presences/sortie/${employeId}`),
-    startWork: (employeId) => api.post(`/presences/start/${employeId}`),
-    pauseWork: (employeId) => api.post(`/presences/pause/${employeId}`),
-    resumeWork: (employeId) => api.post(`/presences/resume/${employeId}`),
-    endWork: (employeId) => api.post(`/presences/end/${employeId}`),
-    getCurrentSession: (employeId) => api.get(`/presences/current/${employeId}`),
-    // New analytics endpoints
-    getTodayStats: (employeId) => api.get(`/presences/stats/today/${employeId}`),
-    getWeekStats: (employeId) => api.get(`/presences/stats/week/${employeId}`),
-    getMonthStats: (employeId) => api.get(`/presences/stats/month/${employeId}`),
-    getAdminStats: () => api.get('/presences/stats/admin'),
-    getAnomalies: () => api.get('/presences/anomalies'),
-    getSystemStatus: () => api.get('/presences/system/status'),
-    getAnalytics: (params) => api.get('/presences/analytics', { params }),
-    exportData: (params) => api.get('/presences/export', { params, responseType: 'blob' })
+    // Simplified presence endpoints
+    clockIn: (employeId) => api.post(`/presences/clock-in/${employeId}`),
+    clockOut: (employeId) => api.post(`/presences/clock-out/${employeId}`),
+    getTodayPresence: (employeId) => api.get(`/presences/today/${employeId}`),
+    markAttendance: (id, data) => api.post(`/presences/mark/${id}`, data),
+    getStats: () => api.get('/presences/stats')
 };
 
 // Services des contrats
@@ -117,7 +109,21 @@ export const paieService = {
     update: (id, data) => api.put(`/paies/${id}`, data),
     delete: (id) => api.delete(`/paies/${id}`),
     valider: (id) => api.put(`/paies/${id}/valider`),
-    payer: (id) => api.put(`/paies/${id}/payer`)
+    payer: (id) => api.put(`/paies/${id}/payer`),
+    generateBulk: (data) => api.post('/paies/generate-bulk', data),
+    addAdjustment: (id, data) => api.post(`/paies/${id}/adjustments`, data),
+    removeAdjustment: (id, adjustmentId) => api.delete(`/paies/${id}/adjustments/${adjustmentId}`)
+};
+
+// Services des tâches
+export const taskService = {
+    getAll: (params) => api.get('/tasks', { params }),
+    getOne: (id) => api.get(`/tasks/${id}`),
+    getEmployeTasks: (employeId, params) => api.get(`/tasks/employe/${employeId}`, { params }),
+    create: (data) => api.post('/tasks', data),
+    update: (id, data) => api.put(`/tasks/${id}`, data),
+    delete: (id) => api.delete(`/tasks/${id}`),
+    schedule: (taskId, data) => api.post(`/tasks/${taskId}/schedule`, data)
 };
 
 export default api;

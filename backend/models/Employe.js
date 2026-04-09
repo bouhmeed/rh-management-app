@@ -72,6 +72,71 @@ const employeSchema = new mongoose.Schema({
     photo: {
         type: String,
         default: 'default-avatar.png'
+    },
+    payrollTemplate: {
+        defaultPrimes: [{
+            type: {
+                type: String,
+                required: true
+            },
+            montant: {
+                type: Number,
+                required: true,
+                min: 0
+            },
+            recurring: {
+                type: Boolean,
+                default: true
+            }
+        }],
+        defaultDeductions: [{
+            type: {
+                type: String,
+                required: true
+            },
+            montant: {
+                type: Number,
+                required: true,
+                min: 0
+            },
+            recurring: {
+                type: Boolean,
+                default: true
+            }
+        }],
+        transportAllowance: {
+            enabled: {
+                type: Boolean,
+                default: false
+            },
+            montant: {
+                type: Number,
+                default: 0,
+                min: 0
+            }
+        },
+        overtimeRate: {
+            enabled: {
+                type: Boolean,
+                default: false
+            },
+            multiplier: {
+                type: Number,
+                default: 1.5,
+                min: 1
+            }
+        },
+        mealAllowance: {
+            enabled: {
+                type: Boolean,
+                default: false
+            },
+            montant: {
+                type: Number,
+                default: 0,
+                min: 0
+            }
+        }
     }
 }, {
     timestamps: true

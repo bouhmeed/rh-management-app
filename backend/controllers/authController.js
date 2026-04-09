@@ -81,7 +81,7 @@ exports.login = async (req, res) => {
         }
 
         // Trouver l'utilisateur
-        const utilisateur = await Utilisateur.findOne({ email }).populate('role');
+        const utilisateur = await Utilisateur.findOne({ email }).populate('role').populate('employe');
         
         if (!utilisateur) {
             return res.status(401).json({

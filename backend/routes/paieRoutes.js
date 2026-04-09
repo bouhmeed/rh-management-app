@@ -9,7 +9,10 @@ const {
     updatePaie,
     deletePaie,
     validerPaie,
-    payerPaie
+    payerPaie,
+    generateBulkPaie,
+    addAdjustment,
+    removeAdjustment
 } = require('../controllers/paieController');
 
 // Middleware d'authentification
@@ -34,5 +37,12 @@ router.route('/:id')
 // Routes spéciales pour validation et paiement
 router.put('/:id/valider', validerPaie);
 router.put('/:id/payer', payerPaie);
+
+// Route pour génération en masse
+router.post('/generate-bulk', authorize('Admin', 'Manager RH'), generateBulkPaie);
+
+// Routes pour les ajustements
+router.post('/:id/adjustments', authorize('Admin', 'Manager RH'), addAdjustment);
+router.delete('/:id/adjustments/:adjustmentId', authorize('Admin', 'Manager RH'), removeAdjustment);
 
 module.exports = router;

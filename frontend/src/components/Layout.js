@@ -30,7 +30,7 @@ import {
     AttachMoney
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const drawerWidth = 280;
 
@@ -39,6 +39,7 @@ const Layout = ({ children }) => {
     const [anchorEl, setAnchorEl] = useState(null);
     const { user, logout, isAdmin, isManagerRH, isManager } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
@@ -55,6 +56,14 @@ const Layout = ({ children }) => {
     const handleLogout = async () => {
         await logout();
         navigate('/login');
+    };
+
+    // Check if a menu item is active
+    const isActive = (path) => {
+        if (path === location.pathname) return true;
+        // Handle sub-routes (e.g., /contrats/:id should highlight /contrats)
+        if (location.pathname.startsWith(path + '/')) return true;
+        return false;
     };
 
     // Menu items for employees only
@@ -105,11 +114,20 @@ const Layout = ({ children }) => {
                             borderRadius: 1,
                             mx: 1,
                             mb: 0.5,
+                            backgroundColor: isActive(item.path) ? 'primary.main' : 'transparent',
+                            color: isActive(item.path) ? 'white' : 'inherit',
                             '&:hover': {
-                                backgroundColor: 'primary.light',
+                                backgroundColor: isActive(item.path) ? 'primary.dark' : 'primary.light',
+                                color: isActive(item.path) ? 'white' : 'inherit',
                                 '& .MuiListItemIcon-root': {
-                                    color: 'primary.main'
+                                    color: isActive(item.path) ? 'white' : 'primary.main'
                                 }
+                            },
+                            '& .MuiListItemIcon-root': {
+                                color: isActive(item.path) ? 'white' : 'inherit'
+                            },
+                            '& .MuiTypography-root': {
+                                fontWeight: isActive(item.path) ? 600 : 400
                             }
                         }}
                     >

@@ -42,7 +42,9 @@ import {
     MoreVert,
     CheckCircle,
     Payment,
-    HourglassEmpty
+    HourglassEmpty,
+    AutoMode,
+    AddCircle
 } from '@mui/icons-material';
 import { paieService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -61,6 +63,10 @@ const Paies = () => {
     const [statusFilter, setStatusFilter] = useState('');
     const [deleteDialog, setDeleteDialog] = useState({ open: false, paie: null });
     const [filteredPaies, setFilteredPaies] = useState([]);
+    const [bulkDialog, setBulkDialog] = useState({ open: false, mois: '' });
+    const [adjustmentDialog, setAdjustmentDialog] = useState({ open: false, paie: null });
+    const [adjustmentForm, setAdjustmentForm] = useState({ type: '', montant: '', description: '' });
+    const [generating, setGenerating] = useState(false);
 
     // Check if user can manage payrolls
     const canManagePayrolls = isAdmin || isManagerRH;
@@ -146,6 +152,47 @@ const Paies = () => {
         }
     };
 
+    const handleBulkGenerate = async () => {
+        try {
+            setGenerating(true);
+            setError('');
+            
+            const response = await paieService.generateBulk({ mois: bulkDialog.mois });
+            
+            if (response.data.success) {
+                setSuccess(`Paie générée avec succès: ${response.data.summary.generated} employés, ${response.data.summary.skipped} ignorés`);
+                fetchPaies();
+                setBulkDialog({ open: false, mois: '' });
+            } else {
+                setError(response.data.message);
+            }
+        } catch (err) {
+            console.error('Bulk generation error:', err);
+            const errorMessage = err.response?.data?.message || err.message || 'Erreur lors de la génération de la paie en masse';
+            setError(errorMessage);
+        } finally {
+            setGenerating(false);
+        }
+    };
+
+    const handleAddAdjustment = async () => {
+        try {
+            const adjustmentData = {
+                type: adjustmentForm.type,
+                montant: parseFloat(adjustmentForm.montant),
+                description: adjustmentForm.description
+            };
+            
+            await paieService.addAdjustment(adjustmentDialog.paie._id, adjustmentData);
+            setSuccess('Ajustement ajouté avec succès');
+            fetchPaies();
+            setAdjustmentDialog({ open: false, paie: null });
+            setAdjustmentForm({ type: '', montant: '', description: '' });
+        } catch (err) {
+            setError('Erreur lors de l\'ajout de l\'ajustement');
+        }
+    };
+
     const getStatusColor = (statut) => {
         switch (statut) {
             case 'Payé': return 'success';
@@ -212,14 +259,24 @@ const Paies = () => {
                     Gestion des Paies
                 </Typography>
                 {canManagePayrolls && (
-                    <Button
-                        variant="contained"
-                        startIcon={<Add />}
-                        onClick={() => navigate('/paies/nouveau')}
-                        sx={{ borderRadius: 2 }}
-                    >
-                        Nouvelle Paie
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<AutoMode />}
+                            onClick={() => setBulkDialog({ open: true, mois: monthFilter || '' })}
+                            sx={{ borderRadius: 2 }}
+                        >
+                            Générer la Paie
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={<Add />}
+                            onClick={() => navigate('/paies/nouveau')}
+                            sx={{ borderRadius: 2 }}
+                        >
+                            Nouvelle Paie
+                        </Button>
+                    </Box>
                 )}
             </Box>
 
@@ -414,6 +471,16 @@ const Paies = () => {
                                                     </Tooltip>
                                                     {canManagePayrolls && (
                                                         <>
+                                                            <Tooltip title="Ajouter un ajustement">
+                                                                <IconButton 
+                                                                    size="small"
+                                                                    onClick={() => setAdjustmentDialog({ open: true, paie })}
+                                                                    disabled={paie.statut === 'Payé'}
+                                                                    color="info"
+                                                                >
+                                                                    <AddCircle />
+                                                                </IconButton>
+                                                            </Tooltip>
                                                             <Tooltip title="Modifier">
                                                                 <IconButton 
                                                                     size="small"
@@ -496,6 +563,98 @@ const Paies = () => {
                         variant="contained"
                     >
                         Supprimer
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Bulk Payroll Generation Dialog */}
+            <Dialog open={bulkDialog.open} onClose={() => setBulkDialog({ open: false, mois: '' })} maxWidth="sm">
+                <DialogTitle>Générer la paie en masse</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ mt: 2 }}>
+                        <FormControl fullWidth>
+                            <InputLabel>Mois</InputLabel>
+                            <Select
+                                value={bulkDialog.mois}
+                                label="Mois"
+                                onChange={(e) => setBulkDialog({ ...bulkDialog, mois: e.target.value })}
+                            >
+                                <MenuItem value="">Sélectionner un mois</MenuItem>
+                                {generateMonthOptions().slice(0, 12).map((month) => (
+                                    <MenuItem key={month.value} value={month.value}>
+                                        {month.label}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <Typography variant="caption" color="textSecondary" sx={{ mt: 2 }}>
+                            Cette action générera automatiquement la paie pour tous les employés actifs en utilisant leurs modèles de paie.
+                        </Typography>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setBulkDialog({ open: false, mois: '' })}>
+                        Annuler
+                    </Button>
+                    <Button 
+                        onClick={handleBulkGenerate} 
+                        variant="contained"
+                        disabled={!bulkDialog.mois || generating}
+                        startIcon={generating ? <CircularProgress size={20} /> : <AutoMode />}
+                    >
+                        {generating ? 'Génération...' : 'Générer'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Adjustment Dialog */}
+            <Dialog open={adjustmentDialog.open} onClose={() => setAdjustmentDialog({ open: false, paie: null })} maxWidth="sm">
+                <DialogTitle>Ajouter un ajustement</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <FormControl fullWidth>
+                            <InputLabel>Type</InputLabel>
+                            <Select
+                                value={adjustmentForm.type}
+                                label="Type"
+                                onChange={(e) => setAdjustmentForm({ ...adjustmentForm, type: e.target.value })}
+                            >
+                                <MenuItem value="Prime spéciale">Prime spéciale</MenuItem>
+                                <MenuItem value="Bonus performance">Bonus performance</MenuItem>
+                                <MenuItem value="Déduction spéciale">Déduction spéciale</MenuItem>
+                                <MenuItem value="Autre">Autre</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            fullWidth
+                            label="Montant"
+                            type="number"
+                            value={adjustmentForm.montant}
+                            onChange={(e) => setAdjustmentForm({ ...adjustmentForm, montant: e.target.value })}
+                            InputProps={{
+                                startAdornment: <InputAdornment position="start">DT</InputAdornment>
+                            }}
+                        />
+                        <TextField
+                            fullWidth
+                            label="Description"
+                            multiline
+                            rows={2}
+                            value={adjustmentForm.description}
+                            onChange={(e) => setAdjustmentForm({ ...adjustmentForm, description: e.target.value })}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setAdjustmentDialog({ open: false, paie: null })}>
+                        Annuler
+                    </Button>
+                    <Button 
+                        onClick={handleAddAdjustment} 
+                        variant="contained"
+                        disabled={!adjustmentForm.type || !adjustmentForm.montant}
+                    >
+                        Ajouter
                     </Button>
                 </DialogActions>
             </Dialog>

@@ -6,7 +6,9 @@ const {
     getEmployes,
     getEmploye,
     updateEmploye,
-    deleteEmploye
+    deleteEmploye,
+    updatePayrollTemplate,
+    getPayrollTemplate
 } = require('../controllers/employeController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -18,5 +20,9 @@ router.route('/:id')
     .get(protect, getEmploye)
     .put(protect, authorize('Admin', 'Manager RH'), updateEmploye)
     .delete(protect, authorize('Admin'), deleteEmploye);
+
+// Routes pour la gestion du modèle de paie
+router.put('/:id/payroll-template', protect, authorize('Admin', 'Manager RH'), updatePayrollTemplate);
+router.get('/:id/payroll-template', protect, authorize('Admin', 'Manager RH'), getPayrollTemplate);
 
 module.exports = router;

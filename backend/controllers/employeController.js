@@ -226,3 +226,61 @@ exports.deleteEmploye = async (req, res) => {
         });
     }
 };
+
+// @desc    Mettre à jour le modèle de paie d'un employé
+// @route   PUT /api/employes/:id/payroll-template
+// @access  Private (Admin, Manager RH)
+exports.updatePayrollTemplate = async (req, res) => {
+    try {
+        const employe = await Employe.findById(req.params.id);
+
+        if (!employe) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employé non trouvé'
+            });
+        }
+
+        employe.payrollTemplate = req.body.payrollTemplate;
+        await employe.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Modèle de paie mis à jour avec succès',
+            data: employe
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: 'Erreur lors de la mise à jour du modèle de paie',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Obtenir le modèle de paie d'un employé
+// @route   GET /api/employes/:id/payroll-template
+// @access  Private (Admin, Manager RH)
+exports.getPayrollTemplate = async (req, res) => {
+    try {
+        const employe = await Employe.findById(req.params.id);
+
+        if (!employe) {
+            return res.status(404).json({
+                success: false,
+                message: 'Employé non trouvé'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: employe.payrollTemplate || {}
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération du modèle de paie',
+            error: error.message
+        });
+    }
+};

@@ -24,17 +24,13 @@ import {
     InputLabel,
     Select,
     Tooltip,
-    Alert,
-    Stepper,
-    Step,
-    StepLabel
+    Alert
 } from '@mui/material';
 import {
     Add,
     CheckCircle,
     Cancel,
-    Visibility,
-    EventNote
+    Visibility
 } from '@mui/icons-material';
 import { congeService, employeService } from '../services/api';
 import Layout from '../components/Layout';
@@ -60,11 +56,30 @@ const Conges = () => {
 
     const { user, isManager, isAdmin, isManagerRH } = useAuth();
     const peutApprouver = isManager || isManagerRH || isAdmin;
+    const [employeId, setEmployeId] = useState(null);
 
     useEffect(() => {
         chargerConges();
         chargerEmployes();
+        // Fetch user profile to get employe ID
+        fetchUserProfile();
     }, [filtreStatut]);
+
+    const fetchUserProfile = async () => {
+        try {
+            const { authService } = await import('../services/api');
+            const response = await authService.getMe();
+            console.log('User profile response:', response.data);
+            if (response.data.success && response.data.data.employe) {
+                setEmployeId(response.data.data.employe._id);
+                console.log('Set employeId:', response.data.data.employe._id);
+            } else {
+                console.log('No employe found in user profile');
+            }
+        } catch (error) {
+            console.error('Error fetching user profile:', error);
+        }
+    };
 
     const chargerConges = async () => {
         try {
@@ -115,8 +130,13 @@ const Conges = () => {
 
     const handleSubmit = async () => {
         try {
-            // Validation
-            if (!formData.employe || !formData.dateDebut || !formData.dateFin || !formData.motif) {
+            // Validation - employe field only required for managers
+            const isManagerOrAdmin = isManager || isAdmin || isManagerRH;
+            if (isManagerOrAdmin && !formData.employe) {
+                toast.warning('Veuillez sélectionner un employé');
+                return;
+            }
+            if (!formData.dateDebut || !formData.dateFin || !formData.motif) {
                 toast.warning('Veuillez remplir tous les champs obligatoires');
                 return;
             }
@@ -126,12 +146,25 @@ const Conges = () => {
                 return;
             }
 
-            await congeService.create(formData);
+            // For regular employees, set employe from fetched profile or user object
+            const submitData = {
+                ...formData,
+                employe: formData.employe || employeId || user.employe?._id || user.employe || user._id
+            };
+
+            console.log('Submitting congé data:', submitData);
+            console.log('User object:', user);
+            console.log('Employe ID from profile:', employeId);
+
+            await congeService.create(submitData);
             toast.success('Demande de congé envoyée avec succès');
             handleCloseDialog();
             chargerConges();
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Erreur lors de la demande');
+            console.error('Congé creation error:', error);
+            console.error('Error response:', error.response?.data);
+            const errorMessage = error.response?.data?.message || error.message || 'Erreur lors de la demande';
+            toast.error(errorMessage);
         }
     };
 

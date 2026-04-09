@@ -26,7 +26,9 @@ import {
     FormControl,
     InputLabel,
     Select,
-    Tooltip
+    Tooltip,
+    FormControlLabel,
+    Checkbox
 } from '@mui/material';
 import {
     Search,
@@ -37,7 +39,8 @@ import {
     FilterList,
     Refresh,
     PersonAdd,
-    EventNote
+    EventNote,
+    Settings
 } from '@mui/icons-material';
 import { employeService, departementService, congeService } from '../services/api';
 import Layout from '../components/Layout';
@@ -61,7 +64,15 @@ const Employes = () => {
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
     const [openCongeDialog, setOpenCongeDialog] = useState(false);
+    const [openPayrollTemplateDialog, setOpenPayrollTemplateDialog] = useState(false);
     const [selectedEmploye, setSelectedEmploye] = useState(null);
+    const [payrollTemplate, setPayrollTemplate] = useState({
+        defaultPrimes: [],
+        defaultDeductions: [],
+        transportAllowance: { enabled: false, montant: 0 },
+        overtimeRate: { enabled: false, multiplier: 1.5 },
+        mealAllowance: { enabled: false, montant: 0 }
+    });
     const [congeFormData, setCongeFormData] = useState({
         type: 'Annuel',
         dateDebut: '',
@@ -92,6 +103,30 @@ const Employes = () => {
 
     const { isAdmin, isManagerRH } = useAuth();
     const peutModifier = isAdmin || isManagerRH;
+
+    const handleOpenPayrollTemplate = async (employe) => {
+        setSelectedEmploye(employe);
+        try {
+            const response = await employeService.getPayrollTemplate(employe._id);
+            if (response.data.data) {
+                setPayrollTemplate(response.data.data);
+            }
+            setOpenPayrollTemplateDialog(true);
+        } catch (error) {
+            toast.error('Erreur lors du chargement du modèle de paie');
+        }
+    };
+
+    const handleSavePayrollTemplate = async () => {
+        try {
+            await employeService.updatePayrollTemplate(selectedEmploye._id, { payrollTemplate });
+            toast.success('Modèle de paie enregistré avec succès');
+            setOpenPayrollTemplateDialog(false);
+            chargerEmployes();
+        } catch (error) {
+            toast.error('Erreur lors de l\'enregistrement du modèle de paie');
+        }
+    };
 
     useEffect(() => {
         chargerEmployes();
@@ -464,6 +499,13 @@ const Employes = () => {
                                                 <EventNote />
                                             </IconButton>
                                         </Tooltip>
+                                        {peutModifier && (
+                                            <Tooltip title="Configurer modèle de paie">
+                                                <IconButton size="small" color="warning" onClick={() => handleOpenPayrollTemplate(employe)}>
+                                                    <Settings />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
                                         <Tooltip title="Voir détails">
                                             <IconButton size="small" color="info" onClick={() => handleViewDetails(employe)}>
                                                 <Visibility />
@@ -870,6 +912,165 @@ const Employes = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setOpenDetailsDialog(false)}>Fermer</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Payroll Template Dialog */}
+            <Dialog open={openPayrollTemplateDialog} onClose={() => setOpenPayrollTemplateDialog(false)} maxWidth="md" fullWidth>
+                <DialogTitle>
+                    Configurer le modèle de paie - {selectedEmploye?.prenom} {selectedEmploye?.nom}
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12}>
+                            <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
+                                Primes par défaut
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Typography variant="caption" color="textSecondary">
+                                Ces primes seront appliquées automatiquement chaque mois
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                                <TextField
+                                    fullWidth
+                                    label="Type de prime"
+                                    placeholder="Ex: Prime responsabilité"
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Montant"
+                                    type="number"
+                                    placeholder="500"
+                                    InputProps={{
+                                        startAdornment: <InputAdornment position="start">DT</InputAdornment>
+                                    }}
+                                />
+                                <Button variant="outlined" startIcon={<Add />}>
+                                    Ajouter
+                                </Button>
+                            </Box>
+                        </Grid>
+                        
+                        <Grid item xs={12}>
+                            <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
+                                Déductions par défaut
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Typography variant="caption" color="textSecondary">
+                                Ces déductions seront appliquées automatiquement chaque mois
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                                <TextField
+                                    fullWidth
+                                    label="Type de déduction"
+                                    placeholder="Ex: CNSS"
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Montant"
+                                    type="number"
+                                    placeholder="100"
+                                    InputProps={{
+                                        startAdornment: <InputAdornment position="start">DT</InputAdornment>
+                                    }}
+                                />
+                                <Button variant="outlined" startIcon={<Add />}>
+                                    Ajouter
+                                </Button>
+                            </Box>
+                        </Grid>
+
+                        <Grid item xs={12}>
+                            <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
+                                Allocations
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <FormControl fullWidth>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={payrollTemplate.transportAllowance.enabled}
+                                            onChange={(e) => setPayrollTemplate({
+                                                ...payrollTemplate,
+                                                transportAllowance: {
+                                                    ...payrollTemplate.transportAllowance,
+                                                    enabled: e.target.checked
+                                                }
+                                            })}
+                                        />
+                                    }
+                                    label="Allocation de transport"
+                                />
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label="Montant transport"
+                                type="number"
+                                value={payrollTemplate.transportAllowance.montant}
+                                onChange={(e) => setPayrollTemplate({
+                                    ...payrollTemplate,
+                                    transportAllowance: {
+                                        ...payrollTemplate.transportAllowance,
+                                        montant: parseFloat(e.target.value) || 0
+                                    }
+                                })}
+                                disabled={!payrollTemplate.transportAllowance.enabled}
+                                InputProps={{
+                                    startAdornment: <InputAdornment position="start">DT</InputAdornment>
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <FormControl fullWidth>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={payrollTemplate.overtimeRate.enabled}
+                                            onChange={(e) => setPayrollTemplate({
+                                                ...payrollTemplate,
+                                                overtimeRate: {
+                                                    ...payrollTemplate.overtimeRate,
+                                                    enabled: e.target.checked
+                                                }
+                                            })}
+                                        />
+                                    }
+                                    label="Heures supplémentaires"
+                                />
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                fullWidth
+                                label="Taux multiplicateur"
+                                type="number"
+                                value={payrollTemplate.overtimeRate.multiplier}
+                                onChange={(e) => setPayrollTemplate({
+                                    ...payrollTemplate,
+                                    overtimeRate: {
+                                        ...payrollTemplate.overtimeRate,
+                                        multiplier: parseFloat(e.target.value) || 1
+                                    }
+                                })}
+                                disabled={!payrollTemplate.overtimeRate.enabled}
+                            />
+                        </Grid>
+                    </Grid>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenPayrollTemplateDialog(false)}>Annuler</Button>
+                    <Button onClick={handleSavePayrollTemplate} variant="contained">
+                        Enregistrer
+                    </Button>
                 </DialogActions>
             </Dialog>
         </Layout>

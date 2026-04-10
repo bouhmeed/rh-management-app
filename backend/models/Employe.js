@@ -27,11 +27,6 @@ const employeSchema = new mongoose.Schema({
         required: [true, 'La date d\'embauche est requise'],
         default: Date.now
     },
-    salaire: {
-        type: Number,
-        required: [true, 'Le salaire est requis'],
-        min: [0, 'Le salaire ne peut pas être négatif']
-    },
     statut: {
         type: String,
         enum: ['Actif', 'En congé', 'Suspendu', 'Démissionné'],
@@ -72,71 +67,6 @@ const employeSchema = new mongoose.Schema({
     photo: {
         type: String,
         default: 'default-avatar.png'
-    },
-    payrollTemplate: {
-        defaultPrimes: [{
-            type: {
-                type: String,
-                required: true
-            },
-            montant: {
-                type: Number,
-                required: true,
-                min: 0
-            },
-            recurring: {
-                type: Boolean,
-                default: true
-            }
-        }],
-        defaultDeductions: [{
-            type: {
-                type: String,
-                required: true
-            },
-            montant: {
-                type: Number,
-                required: true,
-                min: 0
-            },
-            recurring: {
-                type: Boolean,
-                default: true
-            }
-        }],
-        transportAllowance: {
-            enabled: {
-                type: Boolean,
-                default: false
-            },
-            montant: {
-                type: Number,
-                default: 0,
-                min: 0
-            }
-        },
-        overtimeRate: {
-            enabled: {
-                type: Boolean,
-                default: false
-            },
-            multiplier: {
-                type: Number,
-                default: 1.5,
-                min: 1
-            }
-        },
-        mealAllowance: {
-            enabled: {
-                type: Boolean,
-                default: false
-            },
-            montant: {
-                type: Number,
-                default: 0,
-                min: 0
-            }
-        }
     }
 }, {
     timestamps: true

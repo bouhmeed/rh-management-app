@@ -28,7 +28,12 @@ import {
     Select,
     Tooltip,
     FormControlLabel,
-    Checkbox
+    Checkbox,
+    Tabs,
+    Tab,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails
 } from '@mui/material';
 import {
     Search,
@@ -40,11 +45,14 @@ import {
     Refresh,
     PersonAdd,
     EventNote,
-    Settings
+    Settings,
+    ExpandMore
 } from '@mui/icons-material';
 import { employeService, departementService, congeService } from '../services/api';
 import Layout from '../components/Layout';
 import Loader from '../components/Loader';
+import ModernHeader from '../components/ModernHeader';
+import ModernCard from '../components/ModernCard';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 
@@ -66,6 +74,22 @@ const Employes = () => {
     const [openCongeDialog, setOpenCongeDialog] = useState(false);
     const [openPayrollTemplateDialog, setOpenPayrollTemplateDialog] = useState(false);
     const [selectedEmploye, setSelectedEmploye] = useState(null);
+    const [activeTab, setActiveTab] = useState(0);
+    const [contratData, setContratData] = useState({
+        typeContrat: 'CDI',
+        dateDebut: new Date().toISOString().split('T')[0],
+        dateFin: '',
+        salaireBase: '',
+        periodeEssai: { duree: '' },
+        avantages: [],
+        payrollTemplate: {
+            defaultPrimes: [],
+            defaultDeductions: [],
+            transportAllowance: { enabled: false, montant: 0 },
+            overtimeRate: { enabled: false, multiplier: 1.5 },
+            mealAllowance: { enabled: false, montant: 0 }
+        }
+    });
     const [payrollTemplate, setPayrollTemplate] = useState({
         defaultPrimes: [],
         defaultDeductions: [],
@@ -86,7 +110,6 @@ const Employes = () => {
         telephone: '',
         poste: '',
         departement: '',
-        salaire: '',
         dateEmbauche: new Date().toISOString().split('T')[0],
         statut: 'Actif',
         adresse: {
@@ -194,7 +217,6 @@ const Employes = () => {
                 telephone: employe.telephone || '',
                 poste: employe.poste || '',
                 departement: employe.departement?._id || '',
-                salaire: employe.salaire || '',
                 dateEmbauche: employe.dateEmbauche?.split('T')[0] || new Date().toISOString().split('T')[0],
                 statut: employe.statut || 'Actif',
                 adresse: employe.adresse || {
@@ -217,7 +239,6 @@ const Employes = () => {
                 telephone: '',
                 poste: '',
                 departement: '',
-                salaire: '',
                 dateEmbauche: new Date().toISOString().split('T')[0],
                 statut: 'Actif',
                 adresse: {
@@ -231,6 +252,22 @@ const Employes = () => {
                 situationFamiliale: '',
                 enfants: 0
             });
+            setContratData({
+                typeContrat: 'CDI',
+                dateDebut: new Date().toISOString().split('T')[0],
+                dateFin: '',
+                salaireBase: '',
+                periodeEssai: { duree: '' },
+                avantages: [],
+                payrollTemplate: {
+                    defaultPrimes: [],
+                    defaultDeductions: [],
+                    transportAllowance: { enabled: false, montant: 0 },
+                    overtimeRate: { enabled: false, multiplier: 1.5 },
+                    mealAllowance: { enabled: false, montant: 0 }
+                }
+            });
+            setActiveTab(0);
         }
         setOpenDialog(true);
     };
@@ -259,10 +296,38 @@ const Employes = () => {
         }
     };
 
+    const handleContratChange = (e) => {
+        const { name, value } = e.target;
+        if (name.startsWith('payrollTemplate.')) {
+            const field = name.split('.')[1];
+            setContratData({
+                ...contratData,
+                payrollTemplate: {
+                    ...contratData.payrollTemplate,
+                    [field]: value
+                }
+            });
+        } else if (name.startsWith('periodeEssai.')) {
+            const field = name.split('.')[1];
+            setContratData({
+                ...contratData,
+                periodeEssai: {
+                    ...contratData.periodeEssai,
+                    [field]: value
+                }
+            });
+        } else {
+            setContratData({
+                ...contratData,
+                [name]: value
+            });
+        }
+    };
+
     const handleSubmit = async () => {
         try {
             // Validation simple
-            if (!formData.nom || !formData.prenom || !formData.poste || !formData.salaire || !formData.departement) {
+            if (!formData.nom || !formData.prenom || !formData.poste || !formData.departement) {
                 toast.warning('Veuillez remplir tous les champs obligatoires');
                 return;
             }
@@ -271,10 +336,25 @@ const Employes = () => {
                 await employeService.update(selectedEmploye._id, formData);
                 toast.success('Employé modifié avec succès');
             } else {
-                await employeService.create(formData);
-                toast.success('Employé ajouté avec succès');
+                // Pour les nouveaux employés, utiliser createWithContract
+                if (!contratData.salaireBase) {
+                    toast.warning('Veuillez renseigner le salaire de base dans l\'onglet Contrat');
+                    return;
+                }
+                const data = {
+                    ...formData,
+                    contrat: {
+                        ...contratData,
+                        salaireBase: Number(contratData.salaireBase),
+                        periodeEssai: {
+                            duree: contratData.periodeEssai.duree ? Number(contratData.periodeEssai.duree) : undefined
+                        }
+                    }
+                };
+                await employeService.createWithContract(data);
+                toast.success('Employé et contrat créés avec succès');
             }
-            
+
             handleCloseDialog();
             chargerEmployes();
         } catch (error) {
@@ -353,17 +433,21 @@ const Employes = () => {
 
     return (
         <Layout>
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" gutterBottom fontWeight="bold">
-                    Gestion des Employés
-                </Typography>
-                <Typography variant="body1" color="textSecondary">
-                    Gérez tous les employés de l'entreprise
-                </Typography>
-            </Box>
+            <ModernHeader
+                title="Gestion des Employés"
+                subtitle="Gérez tous les employés de l'entreprise"
+                icon={<PersonAdd />}
+            />
 
             {/* Barre d'outils */}
-            <Paper sx={{ p: 2, mb: 3 }}>
+            <Paper elevation={3} sx={{
+                p: 2.5,
+                mb: 3,
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'grey.200',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+            }}>
                 <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} md={4}>
                         <TextField
@@ -435,7 +519,12 @@ const Employes = () => {
             </Paper>
 
             {/* Tableau des employés */}
-            <TableContainer component={Paper}>
+            <TableContainer component={Paper} elevation={3} sx={{
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'grey.200',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+            }}>
                 <Table>
                     <TableHead>
                         <TableRow sx={{ bgcolor: 'background.default' }}>
@@ -559,7 +648,17 @@ const Employes = () => {
                     {selectedEmploye ? 'Modifier l\'employé' : 'Nouvel employé'}
                 </DialogTitle>
                 <DialogContent dividers>
-                    <Grid container spacing={2}>
+                    {!selectedEmploye && (
+                        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                            <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+                                <Tab label="Informations Employé" />
+                                <Tab label="Contrat" />
+                                <Tab label="Paramètres Paie" />
+                            </Tabs>
+                        </Box>
+                    )}
+                    {activeTab === 0 && (
+                        <Grid container spacing={2}>
                         <Grid item xs={12} md={6}>
                             <TextField
                                 fullWidth
@@ -631,21 +730,6 @@ const Employes = () => {
                                     ))}
                                 </Select>
                             </FormControl>
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                            <TextField
-                                fullWidth
-                                label="Salaire *"
-                                name="salaire"
-                                type="number"
-                                value={formData.salaire}
-                                onChange={handleInputChange}
-                                margin="normal"
-                                required
-                                InputProps={{
-                                    endAdornment: <InputAdornment position="end">DT</InputAdornment>
-                                }}
-                            />
                         </Grid>
                         <Grid item xs={12} md={4}>
                             <TextField
@@ -780,6 +864,219 @@ const Employes = () => {
                             />
                         </Grid>
                     </Grid>
+                    )}
+                    {activeTab === 1 && (
+                        <Grid container spacing={2}>
+                            <Grid item xs={12} md={6}>
+                                <FormControl fullWidth margin="normal">
+                                    <InputLabel>Type de contrat *</InputLabel>
+                                    <Select
+                                        name="typeContrat"
+                                        value={contratData.typeContrat}
+                                        onChange={handleContratChange}
+                                        label="Type de contrat"
+                                    >
+                                        <MenuItem value="CDI">CDI</MenuItem>
+                                        <MenuItem value="CDD">CDD</MenuItem>
+                                        <MenuItem value="Stage">Stage</MenuItem>
+                                        <MenuItem value="Freelance">Freelance</MenuItem>
+                                        <MenuItem value="Intérim">Intérim</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Date de début *"
+                                    name="dateDebut"
+                                    type="date"
+                                    value={contratData.dateDebut}
+                                    onChange={handleContratChange}
+                                    margin="normal"
+                                    required
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                            </Grid>
+                            {contratData.typeContrat === 'CDD' && (
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="Date de fin *"
+                                        name="dateFin"
+                                        type="date"
+                                        value={contratData.dateFin}
+                                        onChange={handleContratChange}
+                                        margin="normal"
+                                        required
+                                        InputLabelProps={{ shrink: true }}
+                                    />
+                                </Grid>
+                            )}
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Salaire base *"
+                                    name="salaireBase"
+                                    type="number"
+                                    value={contratData.salaireBase}
+                                    onChange={handleContratChange}
+                                    margin="normal"
+                                    required
+                                    InputProps={{
+                                        endAdornment: <InputAdornment position="end">DT</InputAdornment>
+                                    }}
+                                />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Durée période d'essai (jours)"
+                                    name="periodeEssai.duree"
+                                    type="number"
+                                    value={contratData.periodeEssai.duree}
+                                    onChange={handleContratChange}
+                                    margin="normal"
+                                    InputProps={{ inputProps: { min: 0 } }}
+                                />
+                            </Grid>
+                        </Grid>
+                    )}
+                    {activeTab === 2 && (
+                        <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                    Indemnités
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={contratData.payrollTemplate.transportAllowance.enabled}
+                                            onChange={(e) => setContratData({
+                                                ...contratData,
+                                                payrollTemplate: {
+                                                    ...contratData.payrollTemplate,
+                                                    transportAllowance: {
+                                                        ...contratData.payrollTemplate.transportAllowance,
+                                                        enabled: e.target.checked
+                                                    }
+                                                }
+                                            })}
+                                        />
+                                    }
+                                    label="Indemnité de transport"
+                                />
+                                {contratData.payrollTemplate.transportAllowance.enabled && (
+                                    <TextField
+                                        fullWidth
+                                        label="Montant"
+                                        type="number"
+                                        value={contratData.payrollTemplate.transportAllowance.montant}
+                                        onChange={(e) => setContratData({
+                                            ...contratData,
+                                            payrollTemplate: {
+                                                ...contratData.payrollTemplate,
+                                                transportAllowance: {
+                                                    ...contratData.payrollTemplate.transportAllowance,
+                                                    montant: Number(e.target.value)
+                                                }
+                                            }
+                                        })}
+                                        margin="normal"
+                                        InputProps={{
+                                            endAdornment: <InputAdornment position="end">DT</InputAdornment>
+                                        }}
+                                        sx={{ mt: 1 }}
+                                    />
+                                )}
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={contratData.payrollTemplate.overtimeRate.enabled}
+                                            onChange={(e) => setContratData({
+                                                ...contratData,
+                                                payrollTemplate: {
+                                                    ...contratData.payrollTemplate,
+                                                    overtimeRate: {
+                                                        ...contratData.payrollTemplate.overtimeRate,
+                                                        enabled: e.target.checked
+                                                    }
+                                                }
+                                            })}
+                                        />
+                                    }
+                                    label="Heures supplémentaires"
+                                />
+                                {contratData.payrollTemplate.overtimeRate.enabled && (
+                                    <TextField
+                                        fullWidth
+                                        label="Multiplicateur"
+                                        type="number"
+                                        step="0.1"
+                                        value={contratData.payrollTemplate.overtimeRate.multiplier}
+                                        onChange={(e) => setContratData({
+                                            ...contratData,
+                                            payrollTemplate: {
+                                                ...contratData.payrollTemplate,
+                                                overtimeRate: {
+                                                    ...contratData.payrollTemplate.overtimeRate,
+                                                    multiplier: Number(e.target.value)
+                                                }
+                                            }
+                                        })}
+                                        margin="normal"
+                                        sx={{ mt: 1 }}
+                                    />
+                                )}
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={contratData.payrollTemplate.mealAllowance.enabled}
+                                            onChange={(e) => setContratData({
+                                                ...contratData,
+                                                payrollTemplate: {
+                                                    ...contratData.payrollTemplate,
+                                                    mealAllowance: {
+                                                        ...contratData.payrollTemplate.mealAllowance,
+                                                        enabled: e.target.checked
+                                                    }
+                                                }
+                                            })}
+                                        />
+                                    }
+                                    label="Indemnité de repas"
+                                />
+                                {contratData.payrollTemplate.mealAllowance.enabled && (
+                                    <TextField
+                                        fullWidth
+                                        label="Montant"
+                                        type="number"
+                                        value={contratData.payrollTemplate.mealAllowance.montant}
+                                        onChange={(e) => setContratData({
+                                            ...contratData,
+                                            payrollTemplate: {
+                                                ...contratData.payrollTemplate,
+                                                mealAllowance: {
+                                                    ...contratData.payrollTemplate.mealAllowance,
+                                                    montant: Number(e.target.value)
+                                                }
+                                            }
+                                        })}
+                                        margin="normal"
+                                        InputProps={{
+                                            endAdornment: <InputAdornment position="end">DT</InputAdornment>
+                                        }}
+                                        sx={{ mt: 1 }}
+                                    />
+                                )}
+                            </Grid>
+                        </Grid>
+                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDialog}>Annuler</Button>

@@ -2,7 +2,8 @@
 const Employe = require('../models/Employe');
 const Departement = require('../models/Departement');
 const Utilisateur = require('../models/Utilisateur');
-const Role = require('../models/Role'); // Ajouter cette ligne
+const Role = require('../models/Role');
+const Contrat = require('../models/Contrat');
 const bcrypt = require('bcryptjs');
 
 // @desc    Créer un employé
@@ -56,6 +57,80 @@ exports.createEmploye = async (req, res) => {
         res.status(400).json({
             success: false,
             message: error.message
+        });
+    }
+};
+
+// @desc    Créer un employé avec son contrat
+// @route   POST /api/employes/with-contract
+// @access  Private (Admin, Manager RH)
+exports.createEmployeWithContract = async (req, res) => {
+    try {
+        console.log('Données reçues:', JSON.stringify(req.body, null, 2));
+        const { email, contrat, ...employeData } = req.body;
+
+        // Générer un matricule unique
+        const annee = new Date().getFullYear();
+        const count = await Employe.countDocuments();
+        employeData.matricule = `EMP${annee}${(count + 1).toString().padStart(4, '0')}`;
+
+        console.log('Employe data:', JSON.stringify(employeData, null, 2));
+        console.log('Contrat data:', JSON.stringify(contrat, null, 2));
+
+        // Créer l'employé
+        const employe = await Employe.create(employeData);
+
+        // Si un email est fourni, créer un utilisateur associé
+        if (email) {
+            const role = await Role.findOne({ nomRole: 'Employé' });
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash('temporaire123', salt);
+
+            const utilisateur = await Utilisateur.create({
+                email,
+                motDePasse: hashedPassword,
+                role: role._id,
+                employe: employe._id
+            });
+
+            employe.utilisateur = utilisateur._id;
+            await employe.save();
+        }
+
+        // Ajouter l'employé à son département
+        if (employe.departement) {
+            await Departement.findByIdAndUpdate(employe.departement, {
+                $addToSet: { employes: employe._id }
+            });
+        }
+
+        // Créer le contrat associé
+        let contratData = null;
+        if (contrat) {
+            contratData = {
+                ...contrat,
+                employe: employe._id,
+                statut: 'Actif'
+            };
+            const nouveauContrat = await Contrat.create(contratData);
+            contratData = nouveauContrat;
+        }
+
+        res.status(201).json({
+            success: true,
+            data: {
+                employe,
+                contrat: contratData
+            }
+        });
+    } catch (error) {
+        console.error('Erreur détaillée:', error);
+        console.error('Message:', error.message);
+        console.error('Errors:', error.errors);
+        res.status(400).json({
+            success: false,
+            message: error.message,
+            errors: error.errors
         });
     }
 };

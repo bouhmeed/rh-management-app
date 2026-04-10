@@ -15,11 +15,12 @@ exports.getAllPaies = async (req, res) => {
         if (mois) query.mois = mois;
         if (statut) query.statut = statut;
         if (employe) query.employe = employe;
-        
+
         const paies = await Paie.find(query)
             .populate('employe', 'nom prenom email matricule')
+            .populate('contrat')
             .sort({ mois: -1, createdAt: -1 });
-        
+
         res.status(200).json({
             success: true,
             count: paies.length,
@@ -59,11 +60,12 @@ exports.getMyPaies = async (req, res) => {
         
         if (mois) query.mois = mois;
         if (statut) query.statut = statut;
-        
+
         const paies = await Paie.find(query)
             .populate('employe', 'nom prenom email matricule')
+            .populate('contrat')
             .sort({ mois: -1, createdAt: -1 });
-        
+
         res.status(200).json({
             success: true,
             count: paies.length,
@@ -84,7 +86,8 @@ exports.getMyPaies = async (req, res) => {
 exports.getPaieById = async (req, res) => {
     try {
         const paie = await Paie.findById(req.params.id)
-            .populate('employe', 'nom prenom email matricule departement');
+            .populate('employe', 'nom prenom email matricule departement')
+            .populate('contrat');
 
         if (!paie) {
             return res.status(404).json({
@@ -130,13 +133,13 @@ exports.getPaieById = async (req, res) => {
 exports.createPaie = async (req, res) => {
     try {
         const paieData = req.body;
-        
+
         // Vérifier si une paie existe déjà pour cet employé et ce mois
-        const existingPaie = await Paie.findOne({ 
-            employe: paieData.employe, 
-            mois: paieData.mois 
+        const existingPaie = await Paie.findOne({
+            employe: paieData.employe,
+            mois: paieData.mois
         });
-        
+
         if (existingPaie) {
             return res.status(400).json({
                 success: false,
@@ -144,15 +147,33 @@ exports.createPaie = async (req, res) => {
             });
         }
 
+        // Si contrat n'est pas fourni, récupérer le contrat actif de l'employé
+        if (!paieData.contrat) {
+            const contrat = await Contrat.findOne({
+                employe: paieData.employe,
+                statut: 'Actif'
+            }).sort({ dateDebut: -1 });
+
+            if (!contrat) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Aucun contrat actif trouvé pour cet employé'
+                });
+            }
+
+            paieData.contrat = contrat._id;
+        }
+
         // Calculer le salaire automatiquement
         const paie = new Paie(paieData);
         await paie.calculerSalaire();
-        
+
         await paie.save();
-        
+
         const populatedPaie = await Paie.findById(paie._id)
-            .populate('employe', 'nom prenom email matricule');
-        
+            .populate('employe', 'nom prenom email matricule')
+            .populate('contrat');
+
         res.status(201).json({
             success: true,
             message: 'Paie créée avec succès',
@@ -190,7 +211,8 @@ exports.updatePaie = async (req, res) => {
         await paie.save();
         
         const updatedPaie = await Paie.findById(paie._id)
-            .populate('employe', 'nom prenom email matricule');
+            .populate('employe', 'nom prenom email matricule')
+            .populate('contrat');
         
         res.status(200).json({
             success: true,
@@ -268,7 +290,8 @@ exports.validerPaie = async (req, res) => {
         await paie.save();
 
         const updatedPaie = await Paie.findById(paie._id)
-            .populate('employe', 'nom prenom email matricule');
+            .populate('employe', 'nom prenom email matricule')
+            .populate('contrat');
         
         res.status(200).json({
             success: true,
@@ -310,7 +333,8 @@ exports.payerPaie = async (req, res) => {
         await paie.save();
 
         const updatedPaie = await Paie.findById(paie._id)
-            .populate('employe', 'nom prenom email matricule');
+            .populate('employe', 'nom prenom email matricule')
+            .populate('contrat');
         
         res.status(200).json({
             success: true,
@@ -332,14 +356,16 @@ exports.payerPaie = async (req, res) => {
 exports.generateBulkPaie = async (req, res) => {
     try {
         const { mois, includeAll = true } = req.body;
-        
+
+        console.log('Génération de paie en masse pour mois:', mois);
+
         if (!mois) {
             return res.status(400).json({
                 success: false,
                 message: 'Le mois est requis (format: YYYY-MM)'
             });
         }
-        
+
         // Validate month format
         if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mois)) {
             return res.status(400).json({
@@ -347,24 +373,26 @@ exports.generateBulkPaie = async (req, res) => {
                 message: 'Format mois invalide (YYYY-MM)'
             });
         }
-        
+
         // Get all active employees
         const employees = await Employe.find({ statut: 'Actif' });
-        
+        console.log('Employés actifs trouvés:', employees.length);
+
         if (employees.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Aucun employé actif trouvé'
             });
         }
-        
+
         const results = {
             generated: [],
             skipped: [],
             errors: []
         };
-        
+
         for (const employe of employees) {
+            console.log('Traitement employé:', employe.nom, employe.prenom);
             try {
                 // Check if payroll already exists for this employee and month
                 const existingPaie = await Paie.findOne({
@@ -385,8 +413,11 @@ exports.generateBulkPaie = async (req, res) => {
                     employe: employe._id,
                     statut: 'Actif'
                 }).sort({ dateDebut: -1 });
-                
+
+                console.log('Contrat trouvé pour', employe.nom, ':', contrat ? 'OUI' : 'NON');
+
                 if (!contrat) {
+                    console.log('Aucun contrat actif trouvé pour', employe.nom);
                     results.skipped.push({
                         employee: `${employe.nom} ${employe.prenom}`,
                         reason: 'No active contract found'
@@ -397,9 +428,9 @@ exports.generateBulkPaie = async (req, res) => {
                 // Create payroll with template defaults
                 const paieData = {
                     employe: employe._id,
+                    contrat: contrat._id,
                     mois: mois,
                     montant: 0, // Will be calculated
-                    salaireBase: contrat.salaireBase,
                     primes: [],
                     deductions: [],
                     heuresSupplementaires: {
@@ -408,11 +439,11 @@ exports.generateBulkPaie = async (req, res) => {
                     },
                     statut: 'Brouillon'
                 };
-                
-                // Apply employee template if available
-                if (employe.payrollTemplate) {
-                    const template = employe.payrollTemplate;
-                    
+
+                // Apply contract template if available
+                if (contrat.payrollTemplate) {
+                    const template = contrat.payrollTemplate;
+
                     // Add recurring primes from template
                     if (template.defaultPrimes && template.defaultPrimes.length > 0) {
                         template.defaultPrimes.forEach(prime => {
@@ -424,7 +455,7 @@ exports.generateBulkPaie = async (req, res) => {
                             }
                         });
                     }
-                    
+
                     // Add recurring deductions from template
                     if (template.defaultDeductions && template.defaultDeductions.length > 0) {
                         template.defaultDeductions.forEach(ded => {
@@ -444,7 +475,8 @@ exports.generateBulkPaie = async (req, res) => {
                 await paie.save();
                 
                 const populatedPaie = await Paie.findById(paie._id)
-                    .populate('employe', 'nom prenom email matricule');
+                    .populate('employe', 'nom prenom email matricule')
+                    .populate('contrat');
                 
                 results.generated.push(populatedPaie);
                 
@@ -522,7 +554,8 @@ exports.addAdjustment = async (req, res) => {
         await paie.save();
 
         const updatedPaie = await Paie.findById(paie._id)
-            .populate('employe', 'nom prenom email matricule');
+            .populate('employe', 'nom prenom email matricule')
+            .populate('contrat');
 
         res.status(200).json({
             success: true,
@@ -567,7 +600,8 @@ exports.removeAdjustment = async (req, res) => {
         await paie.save();
 
         const updatedPaie = await Paie.findById(paie._id)
-            .populate('employe', 'nom prenom email matricule');
+            .populate('employe', 'nom prenom email matricule')
+            .populate('contrat');
 
         res.status(200).json({
             success: true,

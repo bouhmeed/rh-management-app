@@ -50,6 +50,7 @@ export const employeService = {
     getAll: (params) => api.get('/employes', { params }),
     getOne: (id) => api.get(`/employes/${id}`),
     create: (data) => api.post('/employes', data),
+    createWithContract: (data) => api.post('/employes/with-contract', data),
     update: (id, data) => api.put(`/employes/${id}`, data),
     delete: (id) => api.delete(`/employes/${id}`),
     updatePayrollTemplate: (id, data) => api.put(`/employes/${id}/payroll-template`, data),

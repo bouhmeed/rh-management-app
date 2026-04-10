@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const {
     createEmploye,
+    createEmployeWithContract,
     getEmployes,
     getEmploye,
     updateEmploye,
@@ -11,6 +12,11 @@ const {
     getPayrollTemplate
 } = require('../controllers/employeController');
 const { protect, authorize } = require('../middleware/auth');
+
+router.post('/with-contract', protect, authorize('Admin', 'Manager RH'), (req, res, next) => {
+    console.log('Route /with-contract atteinte');
+    createEmployeWithContract(req, res, next);
+});
 
 router.route('/')
     .post(protect, authorize('Admin', 'Manager RH'), createEmploye)

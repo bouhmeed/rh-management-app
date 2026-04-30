@@ -1,0 +1,52 @@
+{
+  "utilisateurs": {
+    "status": "error",
+    "data": null,
+    "error": "Accès non autorisé"
+  },
+  "roles": {
+    "status": "error",
+    "data": null,
+    "error": "Route non trouvée: GET /api/roles"
+  },
+  "employes": {
+    "status": "error",
+    "data": null,
+    "error": "Accès non autorisé"
+  },
+  "departements": {
+    "status": "error",
+    "data": null,
+    "error": "Accès non autorisé"
+  },
+  "contrats": {
+    "status": "error",
+    "data": null,
+    "error": "Accès non autorisé"
+  },
+  "conges": {
+    "status": "error",
+    "data": null,
+    "error": "Accès non autorisé"
+  },
+  "presences": {
+    "status": "error",
+    "data": null,
+    "error": "Accès non autorisé"
+  },
+  "paies": {
+    "status": "error",
+    "data": null,
+    "error": "Accès non autorisé"
+  },
+  "taches": {
+    "status": "error",
+    "data": null,
+    "error": "Route non trouvée: GET /api/taches"
+  },
+  "projets": {
+    "status": "error",
+    "data": null,
+    "error": "Route non trouvée: GET /api/projets"
+  }
+}

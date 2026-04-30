@@ -255,11 +255,18 @@ const Presence = () => {
             return;
         }
         try {
+            // Map English priority values to French enum values
+            const priorityMap = {
+                'Low': 'Basse',
+                'Medium': 'Moyenne',
+                'High': 'Haute'
+            };
+            
             const taskData = {
                 titre: newTask.title,
                 description: newTask.description,
                 employeAssigne: newTask.employe,
-                priorite: newTask.priority,
+                priorite: priorityMap[newTask.priority] || 'Moyenne',
                 dureeEstimee: newTask.dureeEstimee || 8,
                 dateDebut: newTask.startDate,
                 dateFin: newTask.endDate,

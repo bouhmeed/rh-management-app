@@ -206,106 +206,39 @@ const Departements = () => {
                 icon={<Business />}
             />
 
-            {/* Section Statistiques */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-                <Grid item xs={12} sm={6} md={3}>
-                    <Paper elevation={2} sx={{
-                        p: 3,
-                        borderRadius: 3,
-                        height: '100%',
-                        minHeight: 140,
-                        background: 'linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%)',
-                        color: '#3949ab',
-                        border: '1px solid',
-                        borderColor: '#c5cae9'
-                    }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Business sx={{ mr: 1, fontSize: 32, color: '#3949ab' }} />
-                                <Typography variant="h4" fontWeight="bold">
-                                    {totalDepartements}
-                                </Typography>
-                            </Box>
-                            <Typography variant="body2" sx={{ opacity: 0.8, fontWeight: 500 }}>
-                                Total départements
-                            </Typography>
-                        </Box>
-                    </Paper>
+            {/* Statistiques rapides */}
+            <Grid container spacing={3} sx={{ mb: 3 }}>
+                <Grid item xs={12} md={3}>
+                    <ModernCard
+                        title="Total départements"
+                        value={totalDepartements}
+                        icon={<Business />}
+                        color="#3949ab"
+                    />
                 </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                    <Paper elevation={2} sx={{
-                        p: 3,
-                        borderRadius: 3,
-                        height: '100%',
-                        minHeight: 140,
-                        background: 'linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%)',
-                        color: '#c2185b',
-                        border: '1px solid',
-                        borderColor: '#f8bbd0'
-                    }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Groups sx={{ mr: 1, fontSize: 32, color: '#c2185b' }} />
-                                <Typography variant="h4" fontWeight="bold">
-                                    {totalEmployes}
-                                </Typography>
-                            </Box>
-                            <Typography variant="body2" sx={{ opacity: 0.8, fontWeight: 500 }}>
-                                Total employés
-                            </Typography>
-                        </Box>
-                    </Paper>
+                <Grid item xs={12} md={3}>
+                    <ModernCard
+                        title="Total employés"
+                        value={totalEmployes}
+                        icon={<Groups />}
+                        color="#c2185b"
+                    />
                 </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                    <Paper elevation={2} sx={{
-                        p: 3,
-                        borderRadius: 3,
-                        height: '100%',
-                        minHeight: 140,
-                        background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-                        color: '#1976d2',
-                        border: '1px solid',
-                        borderColor: '#bbdefb'
-                    }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <AssignmentInd sx={{ mr: 1, fontSize: 32, color: '#1976d2' }} />
-                                <Typography variant="h4" fontWeight="bold">
-                                    {departementsAvecResponsable}
-                                </Typography>
-                            </Box>
-                            <Typography variant="body2" sx={{ opacity: 0.8, fontWeight: 500 }}>
-                                Avec responsable
-                            </Typography>
-                        </Box>
-                    </Paper>
+                <Grid item xs={12} md={3}>
+                    <ModernCard
+                        title="Avec responsable"
+                        value={departementsAvecResponsable}
+                        icon={<AssignmentInd />}
+                        color="#1976d2"
+                    />
                 </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                    <Paper elevation={2} sx={{
-                        p: 3,
-                        borderRadius: 3,
-                        height: '100%',
-                        minHeight: 140,
-                        background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-                        color: '#388e3c',
-                        border: '1px solid',
-                        borderColor: '#c8e6c9'
-                    }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <TrendingUp sx={{ mr: 1, fontSize: 32, color: '#388e3c' }} />
-                                <Typography variant="h4" fontWeight="bold">
-                                    {employesMoyenParDept}
-                                </Typography>
-                            </Box>
-                            <Typography variant="body2" sx={{ opacity: 0.8, fontWeight: 500 }}>
-                                Moy. employés/dépt
-                            </Typography>
-                        </Box>
-                    </Paper>
+                <Grid item xs={12} md={3}>
+                    <ModernCard
+                        title="Moy. employés/dépt"
+                        value={employesMoyenParDept}
+                        icon={<TrendingUp />}
+                        color="#388e3c"
+                    />
                 </Grid>
             </Grid>
 

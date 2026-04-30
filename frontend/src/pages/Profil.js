@@ -13,6 +13,8 @@ import { Person, Email } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
 import Layout from '../components/Layout';
+import ModernHeader from '../components/ModernHeader';
+import ModernCard from '../components/ModernCard';
 
 const Profil = () => {
     const { user } = useAuth();
@@ -62,7 +64,13 @@ const Profil = () => {
     return (
         <Layout>
             <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
-                <Paper elevation={3} sx={{ p: 4 }}>
+                <Paper elevation={3} sx={{
+                    p: 4,
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'grey.200',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+                }}>
                     <Box display="flex" flexDirection="column" alignItems="center">
                         <Avatar 
                             sx={{ 
@@ -74,11 +82,13 @@ const Profil = () => {
                         >
                             <Person sx={{ fontSize: 40 }} />
                         </Avatar>
-                        
-                        <Typography variant="h4" component="h1" gutterBottom>
-                            Profil
-                        </Typography>
-                        
+
+                        <ModernHeader
+                            title="Mon Profil"
+                            subtitle="Gérez vos informations personnelles"
+                            icon={<Person />}
+                        />
+
                         <Divider sx={{ width: '100%', mb: 3 }} />
                         
                         <Box sx={{ width: '100%', textAlign: 'center' }}>

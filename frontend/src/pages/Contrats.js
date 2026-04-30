@@ -41,6 +41,8 @@ import {
 import { contratService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ModernHeader from '../components/ModernHeader';
+import ModernCard from '../components/ModernCard';
 
 const Contrats = () => {
     const { user, isAdmin, isManagerRH, isManager } = useAuth();
@@ -147,21 +149,43 @@ const Contrats = () => {
     return (
         <Box sx={{ p: 3 }}>
             {/* Header */}
-            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h4" fontWeight="bold" color="primary">
-                    Gestion des Contrats
-                </Typography>
-                {canManageContracts && (
-                    <Button
-                        variant="contained"
-                        startIcon={<Add />}
-                        onClick={() => navigate('/contrats/nouveau')}
-                        sx={{ borderRadius: 2 }}
-                    >
-                        Nouveau Contrat
+            <ModernHeader
+                title="Gestion des Contrats"
+                subtitle="Gérez les contrats des employés"
+                icon={<Business />}
+            />
+
+            {/* Actions Bar */}
+            <Paper elevation={3} sx={{
+                p: 2.5,
+                mb: 3,
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'grey.200',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+            }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" color="textSecondary">
+                        {contrats.length} contrat(s) trouvé(s)
+                    </Typography>
+                    {canManageContracts && (
+                        <Button
+                            variant="contained"
+                            startIcon={<Add />}
+                            onClick={() => navigate('/contrats/nouveau')}
+                            sx={{
+                                borderRadius: 2,
+                                background: 'linear-gradient(135deg, #4f58a5 0%, #49a2da 100%)',
+                                '&:hover': {
+                                    background: 'linear-gradient(135deg, #3d4a94 0%, #3a8cc8 100%)',
+                                }
+                            }}
+                        >
+                            Nouveau Contrat
                     </Button>
                 )}
             </Box>
+            </Paper>
 
             {/* Alerts */}
             {error && (
@@ -224,7 +248,12 @@ const Contrats = () => {
             </Card>
 
             {/* Contracts Table */}
-            <Card>
+            <Card elevation={3} sx={{
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'grey.200',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+            }}>
                 <CardContent sx={{ p: 0 }}>
                     <TableContainer>
                         <Table>

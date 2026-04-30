@@ -49,6 +49,8 @@ import {
 import { paieService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ModernHeader from '../components/ModernHeader';
+import ModernCard from '../components/ModernCard';
 
 const Paies = () => {
     const { user, isAdmin, isManagerRH, isManager, isEmploye } = useAuth();
@@ -254,18 +256,33 @@ const Paies = () => {
     return (
         <Box sx={{ p: 3 }}>
             {/* Header */}
-            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h4" fontWeight="bold" color="primary">
-                    Gestion des Paies
-                </Typography>
-                {canManagePayrolls && (
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Button
-                            variant="outlined"
-                            startIcon={<AutoMode />}
-                            onClick={() => setBulkDialog({ open: true, mois: monthFilter || '' })}
-                            sx={{ borderRadius: 2 }}
-                        >
+            <ModernHeader
+                title="Gestion des Paies"
+                subtitle="Gérez les fiches de paie des employés"
+                icon={<Payment />}
+            />
+
+            {/* Actions Bar */}
+            <Paper elevation={3} sx={{
+                p: 2.5,
+                mb: 3,
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'grey.200',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+            }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" color="textSecondary">
+                        {paies.length} fiche(s) de paie trouvée(s)
+                    </Typography>
+                    {canManagePayrolls && (
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <Button
+                                variant="outlined"
+                                startIcon={<AutoMode />}
+                                onClick={() => setBulkDialog({ open: true, mois: monthFilter || '' })}
+                                sx={{ borderRadius: 2 }}
+                            >
                             Générer la Paie
                         </Button>
                         <Button
@@ -279,6 +296,7 @@ const Paies = () => {
                     </Box>
                 )}
             </Box>
+            </Paper>
 
             {/* Alerts */}
             {error && (
@@ -376,7 +394,12 @@ const Paies = () => {
             </Card>
 
             {/* Payrolls Table */}
-            <Card>
+            <Card elevation={3} sx={{
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'grey.200',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+            }}>
                 <CardContent sx={{ p: 0 }}>
                     <TableContainer>
                         <Table>

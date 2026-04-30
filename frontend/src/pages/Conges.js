@@ -30,11 +30,15 @@ import {
     Add,
     CheckCircle,
     Cancel,
-    Visibility
+    Visibility,
+    EventNote,
+    Pending
 } from '@mui/icons-material';
 import { congeService, employeService } from '../services/api';
 import Layout from '../components/Layout';
 import Loader from '../components/Loader';
+import ModernHeader from '../components/ModernHeader';
+import ModernCard from '../components/ModernCard';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 
@@ -223,53 +227,57 @@ const Conges = () => {
 
     return (
         <Layout>
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" gutterBottom fontWeight="bold">
-                    Gestion des Congés
-                </Typography>
-                <Typography variant="body1" color="textSecondary">
-                    Gérez les demandes de congés des employés
-                </Typography>
-            </Box>
+            <ModernHeader
+                title="Gestion des Congés"
+                subtitle="Gérez les demandes de congés des employés"
+                icon={<EventNote />}
+            />
 
             {/* Statistiques rapides */}
             <Grid container spacing={3} sx={{ mb: 3 }}>
                 <Grid item xs={12} md={3}>
-                    <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'warning.light', color: 'white' }}>
-                        <Typography variant="h4">
-                            {conges.filter(c => c.statut === 'En attente').length}
-                        </Typography>
-                        <Typography variant="body2">En attente</Typography>
-                    </Paper>
+                    <ModernCard
+                        title="En attente"
+                        value={conges.filter(c => c.statut === 'En attente').length}
+                        icon={<Pending />}
+                        color="#ed6c02"
+                    />
                 </Grid>
                 <Grid item xs={12} md={3}>
-                    <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'white' }}>
-                        <Typography variant="h4">
-                            {conges.filter(c => c.statut === 'Approuvé').length}
-                        </Typography>
-                        <Typography variant="body2">Approuvés</Typography>
-                    </Paper>
+                    <ModernCard
+                        title="Approuvés"
+                        value={conges.filter(c => c.statut === 'Approuvé').length}
+                        icon={<CheckCircle />}
+                        color="#2e7d32"
+                    />
                 </Grid>
                 <Grid item xs={12} md={3}>
-                    <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'error.light', color: 'white' }}>
-                        <Typography variant="h4">
-                            {conges.filter(c => c.statut === 'Refusé').length}
-                        </Typography>
-                        <Typography variant="body2">Refusés</Typography>
-                    </Paper>
+                    <ModernCard
+                        title="Refusés"
+                        value={conges.filter(c => c.statut === 'Refusé').length}
+                        icon={<Cancel />}
+                        color="#d32f2f"
+                    />
                 </Grid>
                 <Grid item xs={12} md={3}>
-                    <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'info.light', color: 'white' }}>
-                        <Typography variant="h4">
-                            {conges.reduce((sum, c) => sum + (c.joursDemandes || 0), 0)}
-                        </Typography>
-                        <Typography variant="body2">Jours totaux</Typography>
-                    </Paper>
+                    <ModernCard
+                        title="Jours totaux"
+                        value={conges.reduce((sum, c) => sum + (c.joursDemandes || 0), 0)}
+                        icon={<EventNote />}
+                        color="#1976d2"
+                    />
                 </Grid>
             </Grid>
 
             {/* Barre d'outils */}
-            <Paper sx={{ p: 2, mb: 3 }}>
+            <Paper elevation={3} sx={{
+                p: 2.5,
+                mb: 3,
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'grey.200',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+            }}>
                 <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} md={4}>
                         <FormControl fullWidth size="small">
@@ -301,7 +309,12 @@ const Conges = () => {
             </Paper>
 
             {/* Liste des congés */}
-            <TableContainer component={Paper}>
+            <TableContainer component={Paper} elevation={3} sx={{
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'grey.200',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+            }}>
                 <Table>
                     <TableHead>
                         <TableRow sx={{ bgcolor: 'background.default' }}>

@@ -31,13 +31,23 @@ const presenceSchema = new mongoose.Schema({
     note: {
         type: String,
         default: ''
+    },
+    parentTaskId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Task',
+        default: null
+    },
+    description: {
+        type: String,
+        default: ''
     }
 }, {
     timestamps: true
 });
 
-// Index composé unique pour éviter les doublons par employé/date
-presenceSchema.index({ employe: 1, date: 1 }, { unique: true });
+// Index composé (non unique) pour optimiser les requêtes par employé/date
+// Allow multiple presences per employee per date for subtasks
+presenceSchema.index({ employe: 1, date: 1 });
 
 // Méthode pour clock in
 presenceSchema.methods.clockIn = function() {

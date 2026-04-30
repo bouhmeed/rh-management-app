@@ -35,6 +35,8 @@ import {
 import { departementService, employeService } from '../services/api';
 import Layout from '../components/Layout';
 import Loader from '../components/Loader';
+import ModernHeader from '../components/ModernHeader';
+import ModernCard from '../components/ModernCard';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 
@@ -155,33 +157,54 @@ const Departements = () => {
 
     return (
         <Layout>
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" gutterBottom fontWeight="bold">
-                    Gestion des Départements
-                </Typography>
-                <Typography variant="body1" color="textSecondary">
-                    Organisez les départements de l'entreprise
-                </Typography>
-            </Box>
+            <ModernHeader
+                title="Gestion des Départements"
+                subtitle="Organisez les départements de l'entreprise"
+                icon={<Business />}
+            />
 
             {/* Bouton d'ajout */}
             {peutModifier && (
-                <Box sx={{ mb: 3 }}>
+                <Paper elevation={3} sx={{
+                    p: 2.5,
+                    mb: 3,
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'grey.200',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+                }}>
                     <Button
                         variant="contained"
                         startIcon={<Add />}
                         onClick={() => handleOpenDialog()}
+                        sx={{
+                            borderRadius: 2,
+                            background: 'linear-gradient(135deg, #4f58a5 0%, #49a2da 100%)',
+                            '&:hover': {
+                                background: 'linear-gradient(135deg, #3d4a94 0%, #3a8cc8 100%)',
+                            }
+                        }}
                     >
                         Nouveau département
                     </Button>
-                </Box>
+                </Paper>
             )}
 
             {/* Liste des départements */}
             <Grid container spacing={3}>
                 {departements.map((dept) => (
                     <Grid item xs={12} md={6} lg={4} key={dept._id}>
-                        <Card elevation={2}>
+                        <Card elevation={3} sx={{
+                            borderRadius: 3,
+                            border: '1px solid',
+                            borderColor: 'grey.200',
+                            background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                            transition: 'transform 0.2s, box-shadow 0.2s',
+                            '&:hover': {
+                                transform: 'translateY(-4px)',
+                                boxShadow: 6
+                            }
+                        }}>
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                     <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>

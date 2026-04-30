@@ -25,6 +25,13 @@ app.use(express.urlencoded({ extended: true }));
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
         console.log('✅ Connecté à MongoDB avec succès!');
+        // Sync indexes to update Presence index (remove unique constraint)
+        const Presence = require('./models/Presence');
+        Presence.syncIndexes().then(() => {
+            console.log('✅ Indexes synced for Presence model');
+        }).catch(err => {
+            console.warn('⚠️ Error syncing indexes:', err.message);
+        });
         // Initialiser les rôles par défaut
         return initialiserRoles();
     })

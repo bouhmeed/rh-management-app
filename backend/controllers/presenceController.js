@@ -198,3 +198,63 @@ exports.getStats = async (req, res) => {
         });
     }
 };
+
+// @desc    Delete a presence
+// @route   DELETE /api/presences/:id
+// @access  Private
+exports.deletePresence = async (req, res) => {
+    try {
+        const presence = await Presence.findById(req.params.id);
+
+        if (!presence) {
+            return res.status(404).json({
+                success: false,
+                message: 'Présence non trouvée'
+            });
+        }
+
+        await Presence.findByIdAndDelete(req.params.id);
+
+        res.status(200).json({
+            success: true,
+            message: 'Présence supprimée avec succès'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// @desc    Update a presence
+// @route   PUT /api/presences/:id
+// @access  Private
+exports.updatePresence = async (req, res) => {
+    try {
+        const presence = await Presence.findById(req.params.id);
+
+        if (!presence) {
+            return res.status(404).json({
+                success: false,
+                message: 'Présence non trouvée'
+            });
+        }
+
+        const updatedPresence = await Presence.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        ).populate('employe', 'prenom nom');
+
+        res.status(200).json({
+            success: true,
+            data: updatedPresence
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};

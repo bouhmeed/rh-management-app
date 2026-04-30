@@ -8,7 +8,9 @@ const {
     getTodayPresence,
     markAttendance,
     getPresences,
-    getStats
+    getStats,
+    deletePresence,
+    updatePresence
 } = require('../controllers/presenceController');
 
 // @desc    Clock in
@@ -40,5 +42,15 @@ router.get('/', protect, getPresences);
 // @route   GET /api/presences/stats
 // @access  Private
 router.get('/stats', protect, getStats);
+
+// @desc    Delete a presence
+// @route   DELETE /api/presences/:id
+// @access  Private
+router.delete('/:id', protect, deletePresence);
+
+// @desc    Update a presence
+// @route   PUT /api/presences/:id
+// @access  Private
+router.put('/:id', protect, updatePresence);
 
 module.exports = router;

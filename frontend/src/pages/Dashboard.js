@@ -169,30 +169,102 @@ const Dashboard = () => {
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
     const StatCard = ({ title, value, icon, color, trend }) => (
-        <Card elevation={2}>
-            <CardContent>
+        <Card elevation={4} sx={{
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+            border: '1px solid',
+            borderColor: 'grey.200',
+            transition: 'all 0.3s ease',
+            height: 160,
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+            overflow: 'hidden',
+            '&:hover': {
+                transform: 'translateY(-6px)',
+                boxShadow: 8,
+                borderColor: color,
+                '& .stat-icon': {
+                    transform: 'scale(1.1)'
+                }
+            }
+        }}>
+            <CardContent sx={{ 
+                p: 2.5, 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'center',
+                height: '100%',
+                position: 'relative',
+                zIndex: 2
+            }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box>
-                        <Typography color="textSecondary" variant="body2" gutterBottom>
+                    <Box sx={{ flex: 1 }}>
+                        <Typography 
+                            color="textSecondary" 
+                            variant="body2" 
+                            gutterBottom 
+                            sx={{ 
+                                fontWeight: 600, 
+                                textTransform: 'uppercase', 
+                                fontSize: '0.8rem', 
+                                letterSpacing: 1,
+                                opacity: 0.8,
+                                mb: 1.5
+                            }}
+                        >
                             {title}
                         </Typography>
-                        <Typography variant="h4" component="div" fontWeight="bold">
+                        <Typography 
+                            variant="h3" 
+                            component="div" 
+                            fontWeight="bold" 
+                            sx={{ 
+                                fontSize: '2.2rem', 
+                                mb: 1,
+                                lineHeight: 1,
+                                color: 'text.primary'
+                            }}
+                        >
                             {value}
                         </Typography>
                         {trend && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                                <TrendingUp fontSize="small" sx={{ color: 'success.main', mr: 0.5 }} />
-                                <Typography variant="body2" color="success.main">
+                            <Box sx={{ display: 'flex', alignItems: 'center', mt: 1.5 }}>
+                                <TrendingUp fontSize="small" sx={{ color: 'success.main', mr: 0.75 }} />
+                                <Typography variant="body2" color="success.main" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
                                     {trend}
                                 </Typography>
                             </Box>
                         )}
                     </Box>
-                    <Avatar sx={{ bgcolor: color, width: 56, height: 56 }}>
+                    <Avatar 
+                        className="stat-icon"
+                        sx={{
+                            bgcolor: color,
+                            width: 64,
+                            height: 64,
+                            boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
+                            transition: 'transform 0.3s ease',
+                            ml: 2
+                        }}
+                    >
                         {icon}
                     </Avatar>
                 </Box>
             </CardContent>
+            <Box 
+                sx={{
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    width: 120,
+                    height: 120,
+                    background: `linear-gradient(135deg, ${color}20 0%, transparent 70%)`,
+                    borderRadius: '0 0 0 120px',
+                    zIndex: 1
+                }}
+            />
         </Card>
     );
 
@@ -226,14 +298,6 @@ const Dashboard = () => {
                             value={employeeStats.congesEnAttente}
                             icon={<Pending />}
                             color="#ed6c02"
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                        <StatCard
-                            title="Présences ce mois"
-                            value={employeeStats.presencesMois}
-                            icon={<Today />}
-                            color="#2e7d32"
                         />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
@@ -610,17 +674,25 @@ const Dashboard = () => {
     // Vue ADMIN/MANAGER (existante)
     return (
         <Layout>
-            <Typography variant="h4" gutterBottom fontWeight="bold">
-                Tableau de bord
-            </Typography>
+            <Box sx={{
+                mb: 4,
+                p: 3,
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, #4f58a5 0%, #49a2da 100%)',
+                color: 'white'
+            }}>
+                <Typography variant="h4" gutterBottom fontWeight="bold" sx={{ fontSize: '1.8rem' }}>
+                    Tableau de bord
+                </Typography>
 
-            <Typography variant="body1" color="textSecondary" paragraph>
-                Bienvenue, {user?.email}
-            </Typography>
+                <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                    Bienvenue, {user?.email}
+                </Typography>
+            </Box>
 
             {/* Cartes statistiques */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-                <Grid item xs={12} sm={6} md={3}>
+            <Grid container spacing={3} sx={{ mb: 4, mt: 2 }}>
+                <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
                     <StatCard
                         title="Employés"
                         value={stats.totalEmployes}
@@ -629,7 +701,7 @@ const Dashboard = () => {
                         trend="+12% ce mois"
                     />
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
                     <StatCard
                         title="Congés en attente"
                         value={stats.congesEnAttente}
@@ -637,7 +709,7 @@ const Dashboard = () => {
                         color="#ed6c02"
                     />
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
                     <StatCard
                         title="Départements"
                         value={stats.departements}
@@ -645,7 +717,7 @@ const Dashboard = () => {
                         color="#2e7d32"
                     />
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
                     <StatCard
                         title="Masse salariale"
                         value={`${stats.masseSalariale.toLocaleString()} DT`}
@@ -659,10 +731,21 @@ const Dashboard = () => {
             <Grid container spacing={3}>
                 {/* Graphique des employés par département */}
                 <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Répartition des employés par département
-                        </Typography>
+                    <Paper elevation={3} sx={{
+                        p: 3,
+                        borderRadius: 3,
+                        border: '1px solid',
+                        borderColor: 'grey.200',
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+                    }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Avatar sx={{ bgcolor: '#4f58a5', width: 36, height: 36, mr: 2 }}>
+                                <Business sx={{ fontSize: 20 }} />
+                            </Avatar>
+                            <Typography variant="h6" fontWeight="bold" sx={{ color: '#1e293b' }}>
+                                Répartition des employés par département
+                            </Typography>
+                        </Box>
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
                                 <Pie
@@ -687,10 +770,21 @@ const Dashboard = () => {
 
                 {/* Graphique des congés */}
                 <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Évolution des congés
-                        </Typography>
+                    <Paper elevation={3} sx={{
+                        p: 3,
+                        borderRadius: 3,
+                        border: '1px solid',
+                        borderColor: 'grey.200',
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+                    }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Avatar sx={{ bgcolor: '#49a2da', width: 36, height: 36, mr: 2 }}>
+                                <EventNote sx={{ fontSize: 20 }} />
+                            </Avatar>
+                            <Typography variant="h6" fontWeight="bold" sx={{ color: '#1e293b' }}>
+                                Évolution des congés
+                            </Typography>
+                        </Box>
                         <ResponsiveContainer width="100%" height={300}>
                             <LineChart data={donneesCongesParMois}>
                                 <CartesianGrid strokeDasharray="3 3" />
@@ -703,30 +797,48 @@ const Dashboard = () => {
                         </ResponsiveContainer>
                     </Paper>
                 </Grid>
+            </Grid>
 
-                {/* Alertes et notifications */}
-                <Grid item xs={12}>
-                    <Paper sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom>
+            {/* Alertes et notifications */}
+            <Box sx={{ mt: 4 }}>
+                <Paper elevation={3} sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'grey.200',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
+                }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                        <Avatar sx={{ bgcolor: '#ed6c02', width: 36, height: 36, mr: 2 }}>
+                            <Notifications sx={{ fontSize: 20 }} />
+                        </Avatar>
+                        <Typography variant="h6" fontWeight="bold" sx={{ color: '#1e293b' }}>
                             Alertes récentes
                         </Typography>
-                        <Grid container spacing={2}>
-                            {stats.congesEnAttente > 0 && (
-                                <Grid item xs={12}>
-                                    <Chip
-                                        icon={<Warning />}
-                                        label={`${stats.congesEnAttente} demande(s) de congé en attente d'approbation`}
-                                        color="warning"
-                                        variant="outlined"
-                                        sx={{ mr: 1, mb: 1 }}
-                                    />
-                                </Grid>
-                            )}
-                            {/* Autres alertes... */}
-                        </Grid>
-                    </Paper>
-                </Grid>
-            </Grid>
+                    </Box>
+                    <Grid container spacing={2}>
+                        {stats.congesEnAttente > 0 && (
+                            <Grid item xs={12}>
+                                <Chip
+                                    icon={<Warning />}
+                                    label={`${stats.congesEnAttente} demande(s) de congé en attente d'approbation`}
+                                    color="warning"
+                                    variant="outlined"
+                                    sx={{
+                                        mr: 1,
+                                        mb: 1,
+                                        px: 2,
+                                        py: 1,
+                                        fontSize: '0.9rem',
+                                        fontWeight: 500
+                                    }}
+                                />
+                            </Grid>
+                        )}
+                        {/* Autres alertes... */}
+                    </Grid>
+                </Paper>
+            </Box>
         </Layout>
     );
 };

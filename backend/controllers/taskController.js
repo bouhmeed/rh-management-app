@@ -1,6 +1,7 @@
 const Task = require('../models/Task');
 const Employe = require('../models/Employe');
 const Presence = require('../models/Presence');
+const moment = require('moment');
 
 // Create a new task
 exports.createTask = async (req, res) => {
@@ -8,29 +9,33 @@ exports.createTask = async (req, res) => {
         console.log('Creating task with body:', req.body);
         console.log('User:', req.user);
 
-        const { title, description, employe, quantity, priority, startDate, endDate } = req.body;
+        const { titre, description, employeAssigne, categorie, priorite, dateDebut, dateFin, heureDebut, heureFin, dureeEstimee, couleur } = req.body;
 
         // Verify employe exists
-        const employeExists = await Employe.findById(employe);
+        const employeExists = await Employe.findById(employeAssigne);
         if (!employeExists) {
-            console.log('Employé not found:', employe);
+            console.log('Employé not found:', employeAssigne);
             return res.status(404).json({ message: 'Employé non trouvé' });
         }
 
         const task = new Task({
-            title,
+            titre,
             description,
-            employe,
-            quantity: quantity || 8,
-            priority: priority || 'Medium',
-            startDate,
-            endDate,
-            createdBy: req.user?._id
+            employeAssigne,
+            categorie,
+            priorite: priorite || 'Moyenne',
+            dateDebut,
+            dateFin,
+            heureDebut: heureDebut || '08:00',
+            heureFin: heureFin || '09:00',
+            dureeEstimee: dureeEstimee || 8,
+            couleur,
+            createur: req.user?._id
         });
 
         await task.save();
-        console.log('Task saved with employe:', task.employe);
-        await task.populate('employe', 'prenom nom');
+        console.log('Task saved with employeAssigne:', task.employeAssigne);
+        await task.populate('employeAssigne', 'prenom nom');
         console.log('Task after populate:', task);
 
         res.status(201).json({ data: task });
@@ -40,25 +45,25 @@ exports.createTask = async (req, res) => {
     }
 };
 
-// Get all tasks (unscheduled/budget tasks)
+// Get all tasks
 exports.getTasks = async (req, res) => {
     try {
-        const { employe, status, scheduled } = req.query;
+        const { employeAssigne, statut } = req.query;
         console.log('getTasks called with query:', req.query);
 
         const filter = {};
-        if (employe) {
+        if (employeAssigne) {
             // Convert to ObjectId for proper comparison
             const mongoose = require('mongoose');
-            filter.employe = new mongoose.Types.ObjectId(employe);
+            filter.employeAssigne = new mongoose.Types.ObjectId(employeAssigne);
         }
-        if (status) filter.status = status;
-        if (scheduled !== undefined) filter.scheduled = scheduled === 'true';
+        if (statut) filter.statut = statut;
 
         console.log('Filter:', filter);
         const tasks = await Task.find(filter)
-            .populate('employe', 'prenom nom')
-            .sort({ createdAt: -1 });
+            .populate('employeAssigne', 'prenom nom')
+            .populate('createur', 'email')
+            .sort({ dateCreation: -1 });
 
         console.log('Found tasks:', tasks.length, tasks);
         res.json({ data: tasks });
@@ -72,8 +77,8 @@ exports.getTasks = async (req, res) => {
 exports.getTask = async (req, res) => {
     try {
         const task = await Task.findById(req.params.id)
-            .populate('employe', 'prenom nom')
-            .populate('presence');
+            .populate('employeAssigne', 'prenom nom')
+            .populate('createur', 'email');
 
         if (!task) {
             return res.status(404).json({ message: 'Tâche non trouvée' });
@@ -88,24 +93,25 @@ exports.getTask = async (req, res) => {
 // Update a task
 exports.updateTask = async (req, res) => {
     try {
-        const { title, description, quantity, status, priority, startDate, endDate, scheduled, presence } = req.body;
+        const { titre, description, categorie, priorite, statut, dateDebut, dateFin, dureeEstimee, couleur, progression } = req.body;
 
         const task = await Task.findByIdAndUpdate(
             req.params.id,
             {
-                title,
+                titre,
                 description,
-                quantity,
-                status,
-                priority,
-                startDate,
-                endDate,
-                scheduled,
-                presence,
-                updatedAt: Date.now()
+                categorie,
+                priorite,
+                statut,
+                dateDebut,
+                dateFin,
+                dureeEstimee,
+                couleur,
+                progression,
+                dateModification: Date.now()
             },
             { new: true, runValidators: true }
-        ).populate('employe', 'prenom nom');
+        ).populate('employeAssigne', 'prenom nom');
 
         if (!task) {
             return res.status(404).json({ message: 'Tâche non trouvée' });
@@ -135,37 +141,54 @@ exports.deleteTask = async (req, res) => {
 // Schedule a task (create presence and link to task)
 exports.scheduleTask = async (req, res) => {
     try {
-        const { taskId, date, checkIn, checkOut } = req.body;
+        const { date, checkIn, checkOut, description } = req.body;
+        const taskId = req.params.id;
+
+        console.log('Schedule task request body:', { date, checkIn, checkOut, taskId, description });
 
         const task = await Task.findById(taskId);
         if (!task) {
             return res.status(404).json({ message: 'Tâche non trouvée' });
         }
 
-        // Create presence
+        // Convert checkIn and checkOut to Date objects if they are strings
+        const checkInDate = checkIn ? new Date(checkIn) : new Date();
+        const checkOutDate = checkOut ? new Date(checkOut) : new Date(Date.now() + task.dureeEstimee * 60 * 60 * 1000);
+
+        console.log('Parsed dates:', { checkInDate, checkOutDate });
+
+        // Calculate actual hours worked based on checkIn and checkOut
+        const hoursWorked = (checkOutDate - checkInDate) / (1000 * 60 * 60);
+
+        console.log('Hours worked calculated:', hoursWorked);
+
+        // Create presence with parentTaskId and description
         const presence = new Presence({
-            employe: task.employe,
+            employe: task.employeAssigne,
             date: date || new Date().toISOString().split('T')[0],
-            checkIn: checkIn || new Date(),
-            checkOut: checkOut || new Date(Date.now() + task.quantity * 60 * 60 * 1000),
+            checkIn: checkInDate,
+            checkOut: checkOutDate,
             status: 'Present',
-            hoursWorked: task.quantity
+            hoursWorked: hoursWorked,
+            parentTaskId: taskId,
+            description: description || ''
         });
 
         await presence.save();
 
-        // Update task
-        task.scheduled = true;
-        task.presence = presence._id;
-        task.startDate = checkIn || new Date();
-        task.endDate = checkOut || new Date(Date.now() + task.quantity * 60 * 60 * 1000);
-        task.status = 'In Progress';
-        await task.save();
+        console.log('Presence saved:', presence);
 
-        await task.populate('employe', 'prenom nom');
+        // Do NOT update task status - keep it in budget tasks list
+        // The task remains as a main task that can have multiple sub-tasks
 
+        console.log('Populating task employeAssigne...');
+        await task.populate('employeAssigne', 'prenom nom');
+        console.log('Task populated:', task);
+
+        console.log('Sending response...');
         res.json({ data: task, presence });
     } catch (error) {
+        console.error('Error in scheduleTask:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -174,15 +197,15 @@ exports.scheduleTask = async (req, res) => {
 exports.getEmployeTasks = async (req, res) => {
     try {
         const { employeId } = req.params;
-        const { scheduled } = req.query;
+        const { statut } = req.query;
 
-        const filter = { employe: employeId };
-        if (scheduled !== undefined) filter.scheduled = scheduled === 'true';
+        const filter = { employeAssigne: employeId };
+        if (statut) filter.statut = statut;
 
         const tasks = await Task.find(filter)
-            .populate('employe', 'prenom nom')
-            .populate('presence')
-            .sort({ createdAt: -1 });
+            .populate('employeAssigne', 'prenom nom')
+            .populate('createur', 'email')
+            .sort({ dateCreation: -1 });
 
         res.json({ data: tasks });
     } catch (error) {

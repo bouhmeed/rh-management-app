@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const taskSchema = new mongoose.Schema({
-    title: {
+    titre: {
         type: String,
         required: true,
         trim: true
@@ -10,56 +10,78 @@ const taskSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    employe: {
+    employeAssigne: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Employe',
         required: true
     },
-    quantity: {
+    categorie: {
+        type: String,
+        trim: true
+    },
+    priorite: {
+        type: String,
+        enum: ['Haute', 'Moyenne', 'Basse'],
+        default: 'Moyenne'
+    },
+    statut: {
+        type: String,
+        enum: ['En attente', 'En cours', 'Terminé', 'Annulé'],
+        default: 'En attente'
+    },
+    dateDebut: {
+        type: Date,
+        default: null
+    },
+    dateFin: {
+        type: Date,
+        default: null
+    },
+    heureDebut: {
+        type: String,
+        default: '08:00'
+    },
+    heureFin: {
+        type: String,
+        default: '09:00'
+    },
+    dureeEstimee: {
         type: Number,
         default: 8,
         min: 0
     },
-    status: {
+    couleur: {
         type: String,
-        enum: ['Open', 'In Progress', 'Completed', 'Cancelled'],
-        default: 'Open'
+        trim: true
     },
-    priority: {
-        type: String,
-        enum: ['Low', 'Medium', 'High'],
-        default: 'Medium'
+    progression: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100
     },
-    startDate: {
-        type: Date
-    },
-    endDate: {
-        type: Date
-    },
-    scheduled: {
-        type: Boolean,
-        default: false
-    },
-    presence: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Presence'
-    },
-    createdBy: {
+    createur: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Utilisateur'
     },
-    createdAt: {
+    dateCreation: {
         type: Date,
         default: Date.now
     },
-    updatedAt: {
+    dateModification: {
         type: Date,
         default: Date.now
     }
 });
 
+// Indexes pour améliorer les performances
+taskSchema.index({ employeAssigne: 1 });
+taskSchema.index({ statut: 1 });
+taskSchema.index({ createur: 1 });
+taskSchema.index({ employeAssigne: 1, statut: 1 });
+
 taskSchema.pre('save', async function() {
-    this.updatedAt = Date.now();
+    this.dateModification = Date.now();
 });
 
 module.exports = mongoose.model('Task', taskSchema);
